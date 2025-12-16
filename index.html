@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Laporan NOC - Report App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      /* Memastikan konten utama bergeser di desktop */
+      .content-area {
+        transition: margin-left 0.3s ease-in-out;
+        min-height: 100vh;
+      }
+      @media (min-width: 768px) {
+        .content-area {
+          margin-left: 16rem; /* md:ml-64 */
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <div
+      id="backdrop"
+      class="fixed inset-0 bg-black opacity-0 z-30 transition-opacity duration-300 md:hidden pointer-events-none"
+    ></div>
+    <nav
+      class="bg-indigo-800 text-white w-64 space-y-6 py-7 px-2 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 ease-in-out z-40 shadow-2xl"
+      id="sidebar"
+    >
+      <a
+        href="index.html"
+        class="text-white flex items-center space-x-3 px-4 mb-8 border-b border-indigo-700 pb-4"
+      >
+        <svg
+          class="w-7 h-7 text-indigo-300"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" fill="currentColor"></path>
+        </svg>
+        <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
+      </a>
+
+      <div class="px-4">
+        <a
+          href="index.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            ></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a
+          href="input_tiket.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+          <span>Input Laporan</span>
+        </a>
+        <a
+          href="kelola_staf.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.214-.029-.426-.08-.632M20 10V8a2 2 0 00-2-2h-2m2 2h2m-2-2h-2m2 0v-2a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h2m-2-2h2m-2 0v-2a2 2 0 002-2h2m-2 2h2m-2 2h2m2-10a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            ></path>
+          </svg>
+          <span>Kelola Staf</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      <header class="sticky top-0 bg-white shadow-md p-4 mb-4 md:mb-8 z-30">
+        <div class="flex items-center space-x-4">
+          <button
+            class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
+            id="menu-toggle"
+          >
+            <svg
+              class="w-6 h-6 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              ></path>
+            </svg>
+          </button>
+
+          <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
+            Dashboard Laporan Harian
+          </h1>
+        </div>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-xl font-bold text-gray-700 mb-3">
+          Rekapitulasi Kinerja Staf Individual (Berdasarkan Tanggal Laporan)
+        </h2>
+
+        <div
+          id="recap-container"
+          class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        >
+          <p class="text-center text-gray-500 italic md:col-span-3">
+            Pilih tanggal dan klik 'Tampilkan Laporan'.
+          </p>
+        </div>
+
+        <div class="bg-white p-3 shadow-2xl rounded-xl">
+          <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">
+            Riwayat Laporan Tiket (History)
+          </h3>
+
+          <div
+            class="mb-6 pb-4 border-b border-gray-100 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 items-end"
+          >
+            <div class="col-span-1 sm:col-span-2">
+              <label
+                for="filter-tanggal"
+                class="block text-sm font-semibold text-gray-700 mb-1"
+                >Pilih Tanggal Laporan</label
+              >
+              <input
+                type="date"
+                id="filter-tanggal"
+                class="block w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+              />
+            </div>
+
+            <button
+              onclick="loadReports()"
+              class="h-10 col-span-1 sm:col-span-1 bg-indigo-600 text-white font-bold p-2 rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md"
+            >
+              Tampilkan Laporan
+            </button>
+
+            <div class="hidden md:block col-span-2"></div>
+          </div>
+
+          <div id="report-container" class="space-y-6">
+            <p id="loading-status" class="text-center text-gray-500 py-10">
+              Silakan pilih tanggal di atas dan klik 'Tampilkan Laporan'.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+    <script src="js/dashboard_logic.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.getElementById("sidebar");
+        const backdrop = document.getElementById("backdrop"); // Ambil elemen backdrop
+
+        // Fungsi penutup yang dapat dipanggil kembali
+        function closeSidebar() {
+          sidebar.classList.add("-translate-x-full");
+
+          // Sembunyikan backdrop
+          backdrop.classList.remove("opacity-50");
+          backdrop.classList.add("opacity-0", "pointer-events-none");
+        }
+
+        // Fungsi pembuka
+        function openSidebar() {
+          sidebar.classList.remove("-translate-x-full");
+
+          // Tampilkan backdrop
+          backdrop.classList.remove("opacity-0", "pointer-events-none");
+          backdrop.classList.add("opacity-50");
+        }
+
+        if (menuToggle && sidebar && backdrop) {
+          // A. Listener Tombol Hamburger (Toggle)
+          menuToggle.addEventListener("click", function () {
+            const isHidden = sidebar.classList.contains("-translate-x-full");
+
+            if (isHidden) {
+              openSidebar();
+            } else {
+              closeSidebar();
+            }
+          });
+
+          // B. Listener Backdrop (Close)
+          backdrop.addEventListener("click", closeSidebar);
+        } else {
+          console.error(
+            "ERROR: Elemen navigasi (#menu-toggle, #sidebar, atau #backdrop) tidak ditemukan."
+          );
+        }
+
+        // INISIALISASI TANGGAL DEFAULT
+        const filterTanggal = document.getElementById("filter-tanggal");
+        const today = new Date().toISOString().split("T")[0];
+        if (filterTanggal) {
+          filterTanggal.value = today;
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+okee sudah, lalu saya jelaskan terkait alur dan indikator tiketnya ya
+
+
+
+- ketika yang membuat tiket adalah karyawan itu sendiri, maka akan disebut menangani tiket
+
+- ketika dapat transferan tiket dari karyawan lain, maka akan disebut menerima tiket
+
+- Indikator tiket hanya 2 yaitu CLOSE dan Transfer Ke
+
+- Close berarti tiket sudah selesai
+
+- Transfer Ke berati tiket ditransfer ke karyawan lain
+
+- Membuat maupun menerima tiket untuk indikator awal sebelum close dan transfer ke adalah progress
+
+
+
+MENERIMA TIKET:
+TKT202512341242 =NOC FARIL=
+TKT202512549199=NOC FARIL=
+TKT202512320356 =NOC FARIL=
+TKT202512670291 =NOC FARIL= CLOSE
+TKT202512626175=NOC FARIL= CLOSE
+TKT202512155366 =NOC FARIL= CLOSE
+TKT202512170833 =NOC FARIL= CLOSE
+TKT202512208562=NOC FARIL=
+
+MENANGANI TIKET
+TKT202512251874 = TF = FARID
+TKT202512171612 = TF = FARID
+TKT202512180959 = CLOSE
+TKT202512203750 = CLOSE
+-TKT202512187324 =
+TKT202512221942 = TF = DAVID
+TKT202512249410 =
