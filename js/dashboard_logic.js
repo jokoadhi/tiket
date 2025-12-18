@@ -11,16 +11,69 @@ let staffCache = {};
 // ===================================================
 // A. INISIALISASI: LOAD STAFF CACHE
 // ===================================================
+// Perbarui fungsi ini agar lebih kuat terhadap spasi tambahan
 async function loadStaffCache() {
   staffCache = {};
   try {
     const snapshot = await stafRef.get();
     snapshot.forEach((doc) => {
       const data = doc.data();
-      staffCache[data.nama.toUpperCase()] = data.jabatan || "N/A";
+      if (data.nama && data.jabatan) {
+        // Gunakan trim() untuk menghapus spasi di awal/akhir nama dan jabatan
+        staffCache[data.nama.trim().toUpperCase()] = data.jabatan
+          .trim()
+          .toUpperCase();
+      }
     });
+    console.log("Staff Cache Berhasil Dimuat:", staffCache); // Untuk cek di console browser
   } catch (error) {
     console.error("Error loading staff cache:", error);
+  }
+}
+
+// Helper function untuk mengambil prefix secara dinamis
+const getPrefix = (nama) => {
+  if (!nama) return "NOC";
+  const cleanName = nama.trim().toUpperCase();
+  return staffCache[cleanName] || "NOC";
+};
+
+async function loginUser(username, password) {
+  const emailFormat = `${username.toLowerCase().trim()}@sistem.com`;
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(
+      emailFormat,
+      password
+    );
+    const user = userCredential.user;
+    const userDoc = await db.collection("users").doc(user.uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      // PERBAIKAN: Gunakan .trim().toLowerCase() agar tidak ada error typo kapital/spasi
+      const sanitizedRole = userData.role
+        ? userData.role.trim().toLowerCase()
+        : "user";
+
+      localStorage.setItem("userRole", sanitizedRole);
+      localStorage.setItem("userName", userData.name);
+      localStorage.setItem("username", userData.username);
+
+      Swal.fire({
+        icon: "success",
+        title: "Login Berhasil",
+        text: `Selamat datang, ${userData.name}!`,
+        timer: 1500,
+        showConfirmButton: false,
+      }).then(() => {
+        // Pastikan nama file dashboard Anda benar (index.html atau dashboard.html)
+        window.location.href = "index.html";
+      });
+    }
+  } catch (error) {
+    Swal.fire("Login Gagal", "Username atau Password salah.", "error");
   }
 }
 
@@ -28,116 +81,173 @@ async function loadStaffCache() {
 // B. FUNGSI UTAMA: LOAD DATA, KALKULASI, DAN RENDER
 // ===================================================
 window.loadReports = async function () {
+  // 1. Ambil data session untuk menentukan hak akses fitur tambahan (seperti Rekap/CSV)
+  const rawRole = localStorage.getItem("userRole") || "user";
+  const role = rawRole.trim().toLowerCase();
+  const isAdmin = role === "admin" || role === "administrator";
+
+  // Reset tampilan UI
   reportContainer.innerHTML = "";
-  recapContainer.innerHTML =
-    '<p class="text-center text-gray-500 italic md:col-span-3">Memuat data rekapitulasi...</p>';
-  loadingStatus.textContent = "Memuat data laporan...";
+  recapContainer.innerHTML = "";
+  loadingStatus.textContent = "Memuat seluruh data laporan...";
 
   await loadStaffCache();
 
   const tanggal = document.getElementById("filter-tanggal").value;
-
   if (!tanggal) {
-    recapContainer.innerHTML =
-      '<p class="text-center text-gray-500 italic md:col-span-3">Pilih tanggal untuk melihat rekapitulasi.</p>';
-    loadingStatus.textContent =
-      "Silakan pilih Tanggal Laporan terlebih dahulu.";
+    loadingStatus.textContent = "Silakan pilih tanggal.";
     return;
   }
 
-  let query = laporanRef
-    .where("tanggal", "==", tanggal)
-    .orderBy("timestamp", "desc");
-
-  const staffRecap = {};
+  // 2. LOGIKA QUERY GLOBAL (Tanpa filter nama)
+  // Query ini sekarang hanya memfilter berdasarkan TANGGAL agar semua staf muncul
+  let query = laporanRef.where("tanggal", "==", tanggal);
 
   try {
-    const snapshot = await query.get();
+    // Mengurutkan dari yang terbaru diinput
+    const snapshot = await query.orderBy("timestamp", "desc").get();
     loadingStatus.textContent = "";
-    reportContainer.innerHTML = "";
 
     if (snapshot.empty) {
-      recapContainer.innerHTML =
-        '<p class="text-center text-red-500 font-medium md:col-span-3">Tidak ada data rekapitulasi ditemukan.</p>';
       reportContainer.innerHTML =
-        '<p class="text-center text-red-500 font-medium">Tidak ditemukan laporan untuk tanggal tersebut.</p>';
+        '<p class="text-center text-red-500 font-medium py-10">Tidak ada laporan untuk tanggal ini.</p>';
       return;
     }
 
+    const allDocs = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      const stafNama = data.staf_pelaksana;
-
-      const stafJabatan = staffCache[stafNama.toUpperCase()] || "N/A";
-      data.jabatan = stafJabatan;
-
-      if (!staffRecap[stafNama]) {
-        staffRecap[stafNama] = { total: 0, closed: 0, transferred: 0 };
-      }
-
-      if (data.ditangani && Array.isArray(data.ditangani)) {
-        staffRecap[stafNama].total += data.ditangani.length;
-
-        data.ditangani.forEach((item) => {
-          if (item.aksi === "CLOSE") {
-            staffRecap[stafNama].closed++;
-          } else if (item.aksi === "TF") {
-            staffRecap[stafNama].transferred++;
-          }
-        });
-      }
-
+      allDocs.push(data);
+      // Setiap user sekarang bisa melihat kartu laporan milik staf lain
       reportContainer.innerHTML += generateReportCard(data);
     });
 
-    generateRecapCards(staffRecap, tanggal);
+    // 3. LOGIKA REKAPITULASI (Tetap hanya untuk Admin agar tidak penuh di layar User)
+    if (isAdmin) {
+      const staffRecap = processStaffRecap(allDocs);
+      generateRecapCards(staffRecap, tanggal);
+    }
   } catch (error) {
-    console.error("Error memuat laporan: ", error);
-    loadingStatus.textContent = "Gagal memuat data laporan.";
-    recapContainer.innerHTML =
-      '<p class="text-center text-red-500 font-medium md:col-span-3">Gagal memuat rekapitulasi.</p>';
+    console.error("Error loadReports:", error);
+    loadingStatus.textContent =
+      "Gagal memuat data. Pastikan koneksi internet stabil.";
   }
 };
+// ===================================================
+// C. FUNGSI UNTUK GENERATE KARTU REKAPITULASI (DINAMIS)
+// ===================================================
 
-// ===================================================
-// C. FUNGSI UNTUK GENERATE KARTU REKAPITULASI
-// ===================================================
+function processStaffRecap(allReports) {
+  const staffRecap = {};
+
+  allReports.forEach((data) => {
+    const stafNama = data.staf_pelaksana;
+    if (!stafNama) return;
+
+    if (!staffRecap[stafNama]) {
+      staffRecap[stafNama] = {
+        received: { total: 0, closed: 0, tf: 0 },
+        handled: { total: 0, closed: 0, tf: 0 },
+      };
+    }
+
+    // 1. Rekap Tiket Diterima (Menggunakan field 'status')
+    if (data.diterima && Array.isArray(data.diterima)) {
+      staffRecap[stafNama].received.total += data.diterima.length;
+      data.diterima.forEach((item) => {
+        if (item.status === "CLOSE") {
+          staffRecap[stafNama].received.closed++;
+        } else if (item.status === "TF") {
+          staffRecap[stafNama].received.tf++; // Menghitung 'TF' dari field status
+        }
+      });
+    }
+
+    // 2. Rekap Tiket Ditangani (Menggunakan field 'aksi')
+    if (data.ditangani && Array.isArray(data.ditangani)) {
+      staffRecap[stafNama].handled.total += data.ditangani.length;
+      data.ditangani.forEach((item) => {
+        if (item.aksi === "CLOSE") {
+          staffRecap[stafNama].handled.closed++;
+        } else if (item.aksi === "TF") {
+          staffRecap[stafNama].handled.tf++; // Menghitung 'TF' dari field aksi
+        }
+      });
+    }
+  });
+
+  return staffRecap;
+}
+
 function generateRecapCards(staffRecap, tanggal) {
   recapContainer.innerHTML = "";
-
   const stafNames = Object.keys(staffRecap).sort();
 
   if (stafNames.length === 0) {
-    recapContainer.innerHTML =
-      '<p class="text-center text-gray-500 italic md:col-span-3">Tidak ada aksi penanganan tiket oleh staf pada tanggal ini.</p>';
+    recapContainer.innerHTML = `<p class="text-center text-gray-500 italic p-10 text-base">Tidak ada data rekap untuk tanggal ini.</p>`;
     return;
   }
+
+  let html = `
+    <div class="col-span-full overflow-x-auto bg-white rounded-xl shadow-md border border-gray-200">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50 border-b-2 border-gray-200">
+            <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Staf</th>
+            <th class="px-6 py-4 text-xs font-black text-blue-600 uppercase tracking-wider text-center">Menerima</th>
+            <th class="px-6 py-4 text-xs font-black text-indigo-600 uppercase tracking-wider text-center">Menangani</th>
+            <th class="px-6 py-4 text-xs font-black text-green-600 uppercase tracking-wider text-center">Efektivitas</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+  `;
 
   stafNames.forEach((stafNama) => {
     const stats = staffRecap[stafNama];
 
-    const cardHTML = `
-            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500 transition duration-300 hover:shadow-xl">
-                <p class="text-lg font-bold text-gray-800">${stafNama}</p>
-                <p class="text-xs font-medium text-indigo-500 mb-2">Kinerja Tanggal ${tanggal}</p>
-                <div class="space-y-1">
-                    <div class="flex justify-between items-center border-t pt-2">
-                        <span class="text-sm text-gray-600">Total Tiket Ditangani:</span>
-                        <span class="text-xl font-extrabold text-gray-900">${stats.total}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Tiket Berhasil di-CLOSE:</span>
-                        <span class="text-xl font-extrabold text-green-600">${stats.closed}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Tiket Ditransfer (TF):</span>
-                        <span class="text-xl font-extrabold text-yellow-600">${stats.transferred}</span>
-                    </div>
-                </div>
+    // Rumus Efektivitas: (Total Closed) / (Total Tiket)
+    const totalSemua = stats.received.total + stats.handled.total;
+    const totalClosedSemua = stats.received.closed + stats.handled.closed;
+    const completionRate =
+      totalSemua > 0 ? Math.round((totalClosedSemua / totalSemua) * 100) : 0;
+
+    const jabatan =
+      typeof getPrefix === "function" ? getPrefix(stafNama) : "NOC";
+
+    html += `
+      <tr class="hover:bg-blue-50/30 transition-colors text-center">
+        <td class="px-6 py-4 text-left">
+          <p class="text-base font-bold text-gray-800 tracking-tight">${stafNama}</p>
+          <p class="text-[11px] text-pink-500 font-extrabold mt-1 uppercase tracking-widest">${jabatan}</p>
+        </td>
+        <td class="px-6 py-4">
+          <p class="text-xl font-black text-gray-800">${stats.received.total}</p>
+          <div class="flex justify-center gap-2 text-[11px] font-bold mt-1">
+            <span class="text-green-600 bg-green-50 px-1.5 rounded border border-green-100">C:${stats.received.closed}</span>
+            <span class="text-blue-500 bg-blue-50 px-1.5 rounded border border-blue-100">T:${stats.received.tf}</span>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <p class="text-xl font-black text-gray-800">${stats.handled.total}</p>
+          <div class="flex justify-center gap-2 text-[11px] font-bold mt-1">
+            <span class="text-green-600 bg-green-50 px-1.5 rounded border border-green-100">C:${stats.handled.closed}</span>
+            <span class="text-blue-500 bg-blue-50 px-1.5 rounded border border-blue-100">T:${stats.handled.tf}</span>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <div class="flex items-center gap-4 justify-center md:justify-start">
+            <div class="flex-grow bg-gray-200 h-3 rounded-full overflow-hidden hidden md:block border border-gray-100 min-w-[100px]">
+              <div class="bg-green-500 h-full shadow-[0_0_8px_rgba(34,197,94,0.4)] transition-all duration-500" style="width: ${completionRate}%"></div>
             </div>
-        `;
-    recapContainer.innerHTML += cardHTML;
+            <span class="text-base font-black text-gray-800 min-w-[45px] text-right">${completionRate}%</span>
+          </div>
+        </td>
+      </tr>
+    `;
   });
+
+  html += `</tbody></table></div>`;
+  recapContainer.innerHTML = html;
 }
 
 // ===================================================
@@ -321,161 +431,152 @@ function downloadCSV(csv, filename) {
 // D. FUNGSI UNTUK GENERATE TAMPILAN (FORMAT PROFESSIONAL)
 // ===================================================
 function generateReportCard(data) {
-  // 1. Format Tanggal dan Waktu
-  const date = new Date(data.timestamp.toDate());
+  const rawRole = localStorage.getItem("userRole") || "user";
+  const role = rawRole.trim().toLowerCase();
+
+  const date =
+    data.timestamp && data.timestamp.toDate
+      ? data.timestamp.toDate()
+      : new Date();
   const timeString = date.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  // Data yang akan disalin (hanya fokus pada tiket)
   const dataToCopy = {
     diterima: data.diterima,
     ditangani: data.ditangani,
-    // Tambahkan data lain yang mungkin relevan untuk form input
     shift: data.shift || "",
     tanggal: data.tanggal || "",
   };
-  // Encode data agar aman dimasukkan ke dalam atribut onClick
   const encodedData = encodeURIComponent(JSON.stringify(dataToCopy));
-
-  // ------------------------------------------------------------------
-  // Data Laporan LENGKAP untuk Export CSV
   const fullDataJson = encodeURIComponent(JSON.stringify(data));
-  // ------------------------------------------------------------------
 
-  // 2. Konten Menerima Tiket (Transfer Masuk) - DENGAN TIGA KOLOM RAPI & STRIPING
-  let terimaContent = (data.diterima || []) // Tambahkan fallback array kosong
+  // --- Logic Tombol (Font tombol sedikit diperbesar agar mudah ditekan) ---
+  let actionButtons = `
+      <button onclick="copyReportData('${encodedData}')" class="text-[12px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition shadow-sm">
+          Salin Data
+      </button>
+      <button onclick="exportSingleReportTXT('${fullDataJson}')" class="text-[12px] font-bold text-white bg-gray-700 hover:bg-black px-4 py-2 rounded-md transition shadow-sm">
+          TXT
+      </button>
+  `;
+
+  if (role === "admin" || role === "administrator") {
+    actionButtons += `
+      <button onclick="exportSingleReportCSV('${fullDataJson}')" class="text-[12px] font-bold text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md transition shadow-sm">
+          CSV
+      </button>
+    `;
+  }
+
+  // --- Render Konten Tiket Diterima (Font diperbesar) ---
+  let terimaContent = (data.diterima || [])
     .map((item, index) => {
       let statusBadge = "";
-      let infoTengah = `<span class="text-xs text-gray-500">dari NOC ${item.dari_staf}</span>`;
+      // Keterangan 'dari siapa' diperbesar ke text-xs (12px)
+      let infoTengah = `<span class="text-xs text-gray-500 font-medium">dari ${getPrefix(
+        item.dari_staf
+      )} ${item.dari_staf}</span>`;
 
-      if (item.status === "CLOSE") {
+      if (item.status === "CLOSE")
         statusBadge =
-          '<span class="text-xs font-semibold text-white bg-green-500 px-2 py-0.5 rounded-full min-w-[70px] text-center">CLOSE</span>';
-      } else if (item.status === "TF" || item.aksi === "TF") {
-        // Gunakan status/aksi untuk badge
+          '<span class="text-[11px] font-bold text-white bg-green-600 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">CLOSE</span>';
+      else if (item.status === "TF")
         statusBadge =
-          '<span class="text-xs font-semibold text-white bg-blue-500 px-2 py-0.5 rounded-full min-w-[70px] text-center">TRANSFER</span>';
-
-        if (item.tujuan_staf) {
-          infoTengah += `<span class="text-xs text-gray-500 ml-2">(ke NOC ${item.tujuan_staf})</span>`;
-        }
-      } else {
+          '<span class="text-[11px] font-bold text-white bg-blue-500 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">TRANSFER</span>';
+      else
         statusBadge =
-          '<span class="text-xs font-semibold text-gray-800 bg-yellow-300 px-2 py-0.5 rounded-full min-w-[70px] text-center">PROGRESS</span>';
-      }
+          '<span class="text-[11px] font-bold text-gray-800 bg-yellow-300 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">PROGRESS</span>';
 
-      const bgColorClass = index % 2 !== 0 ? "bg-gray-100" : "bg-white";
-
-      return `<div class="flex justify-between items-center py-1 px-1 border-b border-gray-100 last:border-b-0 min-w-[600px] ${bgColorClass}">
-                  <span class="text-gray-900 font-mono text-sm w-1/4">${item.tiket_id}</span>
-                  
-                  <div class="flex-grow text-left">${infoTengah}</div> 
-
-                  <div class="flex-shrink-0">${statusBadge}</div>
-              </div>`;
+      const bgColorClass = index % 2 !== 0 ? "bg-gray-50" : "bg-white";
+      return `<div class="flex justify-between items-center py-3 px-4 border-b border-gray-100 last:border-b-0 min-w-[600px] ${bgColorClass}">
+            <span class="text-gray-800 font-mono text-sm font-black w-1/3 tracking-tight">${item.tiket_id}</span>
+            <div class="flex-grow text-left">${infoTengah}</div> 
+            <div class="flex-shrink-0 ml-2">${statusBadge}</div>
+        </div>`;
     })
     .join("");
 
-  // 3. Konten Menangani Tiket (Dibuat Sendiri/Aksi Staf) - DENGAN TIGA KOLOM RAPI & STRIPING
-  let tanganiContent = (data.ditangani || []) // Tambahkan fallback array kosong
+  // --- Render Konten Tiket Ditangani (Font diperbesar) ---
+  let tanganiContent = (data.ditangani || [])
     .map((item, index) => {
-      let actionInfo = "";
       let actionBadge = "";
-
-      if (item.aksi === "CLOSE") {
+      if (item.aksi === "CLOSE")
         actionBadge =
-          '<span class="text-xs font-semibold text-white bg-green-500 px-2 py-0.5 rounded-full min-w-[70px] text-center">CLOSE</span>';
-        actionInfo = "";
-      } else if (item.aksi === "TF") {
+          '<span class="text-[11px] font-bold text-white bg-green-600 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">CLOSE</span>';
+      else if (item.aksi === "TF")
         actionBadge =
-          '<span class="text-xs font-semibold text-white bg-blue-500 px-2 py-0.5 rounded-full min-w-[70px] text-center">TRANSFER</span>';
-        actionInfo = `<span class="text-xs text-gray-500">ke NOC ${item.tujuan_staf}</span>`;
-      } else {
+          '<span class="text-[11px] font-bold text-white bg-blue-500 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">TRANSFER</span>';
+      else
         actionBadge =
-          '<span class="text-xs font-semibold text-gray-800 bg-gray-300 px-2 py-0.5 rounded-full min-w-[70px] text-center">PROGRESS</span>';
-        actionInfo = "";
-      }
+          '<span class="text-[11px] font-bold text-gray-700 bg-gray-200 px-3 py-1 rounded shadow-sm min-w-[85px] text-center uppercase">PROGRESS</span>';
 
-      const bgColorClass = index % 2 !== 0 ? "bg-gray-100" : "bg-white";
-
-      return `<div class="flex justify-between items-center py-1 px-1 border-b border-gray-100 last:border-b-0 min-w-[600px] ${bgColorClass}">
-                  <span class="text-gray-900 font-mono text-sm w-1/4">${item.tiket_id}</span>
-                  
-                  <div class="flex-grow text-left">${actionInfo}</div>
-
-                  <div class="flex-shrink-0">${actionBadge}</div>
-              </div>`;
+      const bgColorClass = index % 2 !== 0 ? "bg-gray-50" : "bg-white";
+      return `<div class="flex justify-between items-center py-3 px-4 border-b border-gray-100 last:border-b-0 min-w-[600px] ${bgColorClass}">
+            <span class="text-gray-800 font-mono text-sm font-black w-1/3 tracking-tight">${
+              item.tiket_id
+            }</span>
+            <div class="flex-grow text-left">
+              <span class="text-xs text-gray-500 font-medium">${
+                item.aksi === "TF"
+                  ? "ke " + getPrefix(item.tujuan_staf) + " " + item.tujuan_staf
+                  : "Selesai ditangani"
+              }</span>
+            </div>
+            <div class="flex-shrink-0 ml-2">${actionBadge}</div>
+        </div>`;
     })
     .join("");
 
-  // 4. Struktur Card (MODIFIED LAYOUT FINAL: Tombol/Waktu HORIZONTAL & JUSTIFIED)
-  return `
-        <div class="border border-gray-200 p-5 rounded-xl shadow-lg bg-white transition duration-300 hover:shadow-xl border-l-4 border-indigo-500">
-            
-            <div class="pb-3 mb-4 border-b border-indigo-100 flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                
-                <h4 class="text-lg font-extrabold text-gray-800 mb-2 sm:mb-0 w-full sm:w-auto">
-                    Laporan Shift <span class="text-indigo-600">${
-                      data.shift
-                    }</span> - <span class="text-indigo-600">${
-    data.staf_pelaksana
-  }</span>
-                    <span class="text-sm font-semibold text-pink-600">(${
-                      data.jabatan
-                    })</span> 
-                </h4>
-                
-                <div class="flex items-center justify-between w-full mt-2 sm:mt-0 sm:w-auto sm:space-x-2">
-                    
-                    <button onclick="copyReportData('${encodedData}')" class="flex items-center justify-center text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-full transition duration-150 shadow-md">
-                        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4m0 0v4m0-4h4m-4 0H4m8 8H4a2 2 0 01-2-2V4a2 2 0 012-2h12a2 2 0 012 2v4m-8 8v4m0-4h4m-4 0H4"></path></svg>
-                        Salin Data
-                    </button>
+  const jabatanUtama = getPrefix(data.staf_pelaksana);
 
-                    <button onclick="exportSingleReportCSV('${fullDataJson}')" class="flex items-center justify-center text-xs font-semibold text-white bg-green-500 hover:bg-green-600 px-3 py-1 rounded-full transition duration-150 shadow-md">
-                        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h4m-4 0v-4m4 4v-4m-4 4h4"></path></svg>
-                        CSV
-                    </button>
-                    
-                    <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full text-right">
-                        ${data.tanggal} | ${timeString} WIB
-                    </span>
-                </div>
-            </div>
-            
-            <div class="mb-4">
-                <p class="font-bold text-indigo-700 mb-2 flex items-center">
-                    <svg class="w-5 h-5 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m-6-1h.01M10 2a8 8 0 00-8 8c0 2.05 1 4.2 2.64 5.96L10 20l5.36-4.04C17 14.2 18 12.05 18 10a8 8 0 00-8-8z"></path></svg>
-                    TIKET DITERIMA (Transfer Masuk) (${
-                      (data.diterima || []).length
-                    } Item):
-                </p>
-                <div class="pl-2 pr-2 border rounded-lg bg-gray-50/70 p-3 overflow-x-auto">
-                    ${
-                      terimaContent ||
-                      '<p class="text-gray-500 italic text-sm text-center py-2 min-w-[280px]">Tidak ada tiket yang diterima (transfer masuk) pada shift ini.</p>'
-                    }
-                </div>
-            </div>
-            
+  return `
+    <div class="border border-gray-200 rounded-xl shadow-md bg-white overflow-hidden transition duration-300 hover:shadow-lg border-l-8 border-indigo-600 mb-8">
+        <div class="p-5 bg-white border-b border-gray-100 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
             <div>
-                <p class="font-bold text-indigo-700 mb-2 flex items-center">
-                    <svg class="w-5 h-5 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 00-8 8c0 4.41 3.59 8 8 8s8-3.59 8-8a8 8 0 00-8-8zm-1 12l-3-3 1.41-1.41L9 12.17l4.59-4.58L15 9l-6 6z"></path></svg>
-                    AKSI & PENANGANAN TIKET (Dibuat Sendiri) (${
-                      (data.ditangani || []).length
-                    } Item):
-                </p>
-                <div class="pl-2 pr-2 border rounded-lg bg-gray-50/70 p-3 overflow-x-auto">
-                    ${
-                      tanganiContent ||
-                      '<p class="text-gray-500 italic text-sm text-center py-2 min-w-[280px]">Tidak ada aksi penanganan tiket (dibuat sendiri) pada shift ini.</p>'
-                    }
-                </div>
+                <h4 class="text-lg font-black text-gray-800 tracking-tight">
+                    Laporan Shift <span class="text-indigo-600 uppercase">${
+                      data.shift
+                    }</span> - 
+                    <span class="text-indigo-600 uppercase">${
+                      data.staf_pelaksana
+                    }</span>
+                    <span class="text-xs font-black text-pink-500 ml-1 bg-pink-50 px-2 py-1 rounded-md border border-pink-100">${jabatanUtama}</span> 
+                </h4>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                ${actionButtons}
+                <span class="text-xs text-gray-500 bg-gray-100 border border-gray-200 px-3 py-2 rounded-md font-bold">
+                    ${data.tanggal} | ${timeString} WIB
+                </span>
             </div>
         </div>
-    `;
+        <div class="p-6 space-y-8">
+            <div>
+                <p class="text-xs font-black text-indigo-900 mb-4 tracking-[0.15em] uppercase flex items-center">
+                   <span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> MENERIMA TIKET (${
+                     (data.diterima || []).length
+                   } ITEM)
+                </p>
+                <div class="border border-gray-200 rounded-xl overflow-x-auto shadow-sm bg-gray-50/30">${
+                  terimaContent ||
+                  '<p class="text-gray-400 italic text-sm text-center py-10">Tidak ada tiket diterima.</p>'
+                }</div>
+            </div>
+            <div>
+                <p class="text-xs font-black text-indigo-900 mb-4 tracking-[0.15em] uppercase flex items-center">
+                   <span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span> MENANGANI TIKET (${
+                     (data.ditangani || []).length
+                   } ITEM)
+                </p>
+                <div class="border border-gray-200 rounded-xl overflow-x-auto shadow-sm bg-gray-50/30">${
+                  tanganiContent ||
+                  '<p class="text-gray-400 italic text-sm text-center py-10">Tidak ada aksi penanganan.</p>'
+                }</div>
+            </div>
+        </div>
+    </div>`;
 }
 
 // ===================================================
@@ -488,6 +589,101 @@ document.addEventListener("DOMContentLoaded", function () {
   if (filterTanggal) {
     filterTanggal.value = today;
   }
+
+  // ===================================================
+  // H. FUNGSI LOGIKA: EXPORT LAPORAN KE TXT
+  // ===================================================
+  window.exportSingleReportTXT = function (reportDataJson) {
+    try {
+      const data = JSON.parse(decodeURIComponent(reportDataJson));
+
+      // Fungsi pembantu untuk prefix
+      const formatStaffWithPrefix = (name) => {
+        if (!name) return "";
+        const prefix = typeof getPrefix === "function" ? getPrefix(name) : "";
+        return prefix ? `${prefix} ${name.toUpperCase()}` : name.toUpperCase();
+      };
+
+      // --- MENYUSUN KONTEN TEKS ---
+      let txtContent = `NAMA STAFF : ${formatStaffWithPrefix(
+        data.staf_pelaksana
+      )}\n`;
+      txtContent += `SHIFT : ${data.shift?.toUpperCase() || "N/A"}\n\n`;
+
+      txtContent += `MENERIMA TIKET:\n`;
+      if (data.diterima && data.diterima.length > 0) {
+        data.diterima.forEach((item) => {
+          const dari = item.dari_staf
+            ? ` = ${formatStaffWithPrefix(item.dari_staf)}`
+            : "";
+          const status = item.status ? ` = ${item.status}` : "";
+          const tujuan = item.tujuan_staf
+            ? ` ${formatStaffWithPrefix(item.tujuan_staf)}`
+            : "";
+          txtContent += `${item.tiket_id}${dari}${status}${tujuan}\n`;
+        });
+      } else {
+        txtContent += `(Tidak ada tiket diterima)\n`;
+      }
+
+      txtContent += `\nMENANGANI TIKET:\n`;
+      if (data.ditangani && data.ditangani.length > 0) {
+        data.ditangani.forEach((item) => {
+          const aksi = item.aksi ? ` = ${item.aksi}` : "";
+          const tujuan = item.tujuan_staf
+            ? ` ${formatStaffWithPrefix(item.tujuan_staf)}`
+            : "";
+          txtContent += `${item.tiket_id}${aksi}${tujuan}\n`;
+        });
+      } else {
+        txtContent += `(Tidak ada aksi penanganan)\n`;
+      }
+
+      // --- MODAL PILIHAN ---
+      Swal.fire({
+        title: "Opsi Laporan Teks",
+        text: "Pilih cara untuk melihat hasil export:",
+        icon: "question",
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '<i class="fas fa-eye"></i> Lihat Teks',
+        denyButtonText: '<i class="fas fa-download"></i> Download File',
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#4f46e5", // Indigo
+        denyButtonColor: "#1f2937", // Gray-800
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // JIKA PILIH VIEW
+          const newWindow = window.open("", "_blank");
+          newWindow.document.write(
+            `<pre style="font-family: monospace; white-space: pre-wrap; padding: 20px;">${txtContent}</pre>`
+          );
+          newWindow.document.title = `View Laporan - ${data.staf_pelaksana}`;
+        } else if (result.isDenied) {
+          // JIKA PILIH DOWNLOAD
+          const blob = new Blob([txtContent], { type: "text/plain" });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          const fileName =
+            `Laporan_${data.staf_pelaksana}_${data.tanggal}_${data.shift}.txt`.replace(
+              /\s+/g,
+              "_"
+            );
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          window.URL.revokeObjectURL(url);
+        }
+      });
+    } catch (error) {
+      console.error("Gagal memproses teks:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Terjadi kesalahan saat memproses data.",
+      });
+    }
+  };
 
   // loadReports();
 });

@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="id">
   <head>
+    <link rel="icon" type="image/png" href="assets/icons/ico.png" />
+
+    <link rel="manifest" href="manifest.json" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="NOC Report" />
+    <link rel="apple-touch-icon" href="assets/icons/ico.png" />
+
+    <meta name="theme-color" content="#4f46e5" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard Laporan NOC - Report App</title>
@@ -75,7 +88,7 @@
         </a>
         <a
           href="kelola_staf.html"
-          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
         >
           <svg
             class="w-5 h-5"
@@ -97,40 +110,81 @@
 
     <div class="content-area">
       <header class="sticky top-0 bg-white shadow-md p-4 mb-4 md:mb-8 z-30">
-        <div class="flex items-center space-x-4">
-          <button
-            class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
-            id="menu-toggle"
-          >
-            <svg
-              class="w-6 h-6 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button
+              class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
+              id="menu-toggle"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16m-7 6h7"
-              ></path>
-            </svg>
-          </button>
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
 
-          <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
-            Dashboard Laporan Harian
-          </h1>
+            <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
+              Dashboard <span class="hidden md:inline">Laporan Harian</span>
+            </h1>
+          </div>
+
+          <div
+            class="flex items-center space-x-3 border-l pl-4 border-gray-100"
+          >
+            <div class="text-right hidden sm:block">
+              <p
+                id="user-display-name"
+                class="text-sm font-bold text-gray-800 leading-none capitalize"
+              >
+                Loading...
+              </p>
+              <p
+                id="user-display-username"
+                class="text-[14px] font-medium text-indigo-400 mt-1"
+              >
+                @username
+              </p>
+            </div>
+
+            <button
+              onclick="handleLogout()"
+              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
+              title="Keluar"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-xl font-bold text-gray-700 mb-3">
+        <h2 class="admin-only text-xl font-bold text-gray-700 mb-3">
           Rekapitulasi Kinerja Staf Individual (Berdasarkan Tanggal Laporan)
         </h2>
 
         <div
           id="recap-container"
-          class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          class="admin-only grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
         >
           <p class="text-center text-gray-500 italic md:col-span-3">
             Pilih tanggal dan klik 'Tampilkan Laporan'.
@@ -226,13 +280,103 @@
           );
         }
 
-        // INISIALISASI TANGGAL DEFAULT
-        const filterTanggal = document.getElementById("filter-tanggal");
-        const today = new Date().toISOString().split("T")[0];
+        // Menentukan tanggal hari ini dan memperbesar skala input
+        const filterTanggal = document.getElementById("filter-tanggal"); // Sesuaikan ID dengan HTML Anda (biasanya 'tanggal' di form input)
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        const formattedToday = `${yyyy}-${mm}-${dd}`;
+
         if (filterTanggal) {
-          filterTanggal.value = today;
+          filterTanggal.value = formattedToday;
+          // Memperbesar font input tanggal agar lebih jelas
+          filterTanggal.classList.add("text-lg", "p-3");
+        }
+
+        // Menyesuaikan Dropdown Staf & Shift agar font lebih besar
+        const inputsToEnlarge = document.querySelectorAll(
+          "#staf_pelaksana, #shift, .tiket-input"
+        );
+        inputsToEnlarge.forEach((input) => {
+          input.classList.add("text-lg", "font-bold", "p-3");
+        });
+      });
+    </script>
+    <script>
+      (function () {
+        // Ambil role dan bersihkan (huruf kecil & tanpa spasi)
+        const rawRole = localStorage.getItem("userRole") || "user";
+        const role = rawRole.trim().toLowerCase();
+        const username = localStorage.getItem("username");
+
+        // 1. CEK LOGIN
+        if (!username) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        // 2. PROTEKSI UI: Izinkan jika role adalah "admin" ATAU "administrator"
+        const isAdmin = role === "admin" || role === "administrator";
+
+        if (!isAdmin) {
+          // Sembunyikan semua elemen admin-only jika BUKAN admin
+          const adminElements = document.querySelectorAll(".admin-only");
+          adminElements.forEach((el) => {
+            el.style.setProperty("display", "none", "important");
+          });
+
+          // Proteksi URL jika mencoba akses file admin
+          if (window.location.pathname.includes("kelola_staf.html")) {
+            window.location.href = "index.html";
+          }
+        } else {
+          console.log(
+            "Akses Admin Terverifikasi: Menampilkan fitur rekap dan kelola staf."
+          );
+        }
+      })();
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // 1. Ambil data Name dan Username dari LocalStorage
+        const name = localStorage.getItem("userName");
+        const username = localStorage.getItem("username");
+
+        // 2. Tampilkan di Header
+        if (name && username) {
+          document.getElementById("user-display-name").textContent = name;
+          // Menampilkan username dengan format @joko
+          document.getElementById(
+            "user-display-username"
+          ).textContent = `@${username.toLowerCase()}`;
+        } else {
+          // Jika session tidak ditemukan, arahkan kembali ke login
+          window.location.href = "login.html";
         }
       });
+
+      // 3. Fungsi Logout tetap sama
+      window.handleLogout = function () {
+        Swal.fire({
+          title: "Logout dari Sistem?",
+          text: "Sesi Anda akan diakhiri.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#4f46e5",
+          confirmButtonText: "Ya, Logout",
+          cancelButtonText: "Batal",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            if (typeof auth !== "undefined") {
+              auth.signOut();
+            }
+            localStorage.clear();
+            window.location.href = "login.html";
+          }
+        });
+      };
     </script>
   </body>
 </html>

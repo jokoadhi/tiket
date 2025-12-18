@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html lang="id">
   <head>
+    <link rel="icon" type="image/png" href="assets/icons/ico.png" />
+
+    <link rel="manifest" href="manifest.json" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="NOC Report" />
+    <link rel="apple-touch-icon" href="assets/icons/ico.png" />
+
+    <meta name="theme-color" content="#4f46e5" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Input Laporan Harian - NOC Report App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       /* Memastikan konten utama bergeser di desktop */
       .content-area {
@@ -76,7 +90,7 @@
         </a>
         <a
           href="kelola_staf.html"
-          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
         >
           <svg
             class="w-5 h-5"
@@ -98,29 +112,70 @@
 
     <div class="content-area">
       <header class="sticky top-0 bg-white shadow-md p-4 mb-4 md:mb-8 z-30">
-        <div class="flex items-center space-x-4">
-          <button
-            class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
-            id="menu-toggle"
-          >
-            <svg
-              class="w-6 h-6 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button
+              class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
+              id="menu-toggle"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16m-7 6h7"
-              ></path>
-            </svg>
-          </button>
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
 
-          <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
-            Input Laporan Harian
-          </h1>
+            <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
+              Input Laporan Harian
+            </h1>
+          </div>
+
+          <div
+            class="flex items-center space-x-3 border-l pl-4 border-gray-100"
+          >
+            <div class="text-right hidden sm:block">
+              <p
+                id="user-display-name"
+                class="text-sm font-bold text-gray-800 leading-none capitalize"
+              >
+                Loading...
+              </p>
+              <p
+                id="user-display-username"
+                class="text-[14px] font-medium text-indigo-400 mt-1"
+              >
+                @username
+              </p>
+            </div>
+
+            <button
+              onclick="handleLogout()"
+              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
+              title="Keluar"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
       <main class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
@@ -390,6 +445,38 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // === 1. PENGATURAN TANGGAL & SHIFT OTOMATIS ===
+        const inputTanggal = document.getElementById("input-tanggal");
+        const inputShift = document.getElementById("input-shift");
+        const today = new Date();
+        const jam = today.getHours();
+
+        // Set Tanggal Otomatis
+        if (inputTanggal) {
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          inputTanggal.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Set Shift Otomatis Berdasarkan Jam
+        if (inputShift) {
+          let shiftOtomatis = "";
+
+          if (jam >= 8 && jam < 16) {
+            shiftOtomatis = "PAGI";
+          } else if (jam >= 16 && jam < 23) {
+            shiftOtomatis = "SORE";
+          } else {
+            // Jam 23.00 sampai sebelum 08.00 pagi
+            shiftOtomatis = "MALAM";
+          }
+
+          inputShift.value = shiftOtomatis;
+          console.log(`Jam sekarang: ${jam}. Shift diset ke: ${shiftOtomatis}`);
+        }
+
+        // === 2. SIDEBAR LOGIC ===
         const menuToggle = document.querySelector("#menu-toggle");
         const sidebar = document.querySelector("#sidebar");
         const backdrop = document.querySelector("#backdrop");
@@ -407,19 +494,92 @@
         }
 
         if (menuToggle && sidebar && backdrop) {
-          menuToggle.addEventListener("click", function () {
-            const isHidden = sidebar.classList.contains("-translate-x-full");
-
-            if (isHidden) {
-              openSidebar();
-            } else {
-              closeSidebar();
-            }
+          menuToggle.addEventListener("click", () => {
+            sidebar.classList.contains("-translate-x-full")
+              ? openSidebar()
+              : closeSidebar();
           });
-
           backdrop.addEventListener("click", closeSidebar);
         }
+
+        // === 3. HEADER & USER DISPLAY ===
+        const name = localStorage.getItem("userName");
+        const username = localStorage.getItem("username");
+        const userDisplayName = document.getElementById("user-display-name");
+        const userDisplayUser = document.getElementById(
+          "user-display-username"
+        );
+
+        if (name && username) {
+          if (userDisplayName) userDisplayName.textContent = name;
+          if (userDisplayUser)
+            userDisplayUser.textContent = `@${username.toLowerCase()}`;
+        } else {
+          window.location.href = "login.html";
+        }
+
+        // === 4. DROPDOWN STAF AUTOMATION ===
+        const inputStaf = document.getElementById("input-staf");
+        const cachedStaff = JSON.parse(
+          localStorage.getItem("staffCache") || "[]"
+        );
+        const role = (localStorage.getItem("userRole") || "user")
+          .trim()
+          .toLowerCase();
+
+        if (inputStaf && cachedStaff.length > 0) {
+          inputStaf.innerHTML =
+            '<option value="" disabled selected>Pilih Staf Pelaksana</option>';
+          cachedStaff.forEach((staf) => {
+            const opt = document.createElement("option");
+            opt.value = staf.nama;
+            opt.textContent = staf.nama.toUpperCase();
+            inputStaf.appendChild(opt);
+          });
+
+          // Jika user biasa, otomatis pilih namanya sendiri
+          if (role !== "admin" && role !== "administrator") {
+            inputStaf.value = name;
+          }
+        }
       });
+
+      // === 5. PROTEKSI ADMIN (IIFE) ===
+      (function () {
+        const rawRole = localStorage.getItem("userRole") || "user";
+        const role = rawRole.trim().toLowerCase();
+        const isAdmin = role === "admin" || role === "administrator";
+
+        if (!isAdmin) {
+          const adminElements = document.querySelectorAll(".admin-only");
+          adminElements.forEach((el) =>
+            el.style.setProperty("display", "none", "important")
+          );
+
+          if (window.location.pathname.includes("kelola_staf.html")) {
+            window.location.href = "index.html";
+          }
+        }
+      })();
+
+      // === 6. FUNGSI LOGOUT ===
+      window.handleLogout = function () {
+        Swal.fire({
+          title: "Logout dari Sistem?",
+          text: "Sesi Anda akan diakhiri.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#4f46e5",
+          confirmButtonText: "Ya, Logout",
+          cancelButtonText: "Batal",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = "login.html";
+          }
+        });
+      };
     </script>
   </body>
 </html>
