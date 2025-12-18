@@ -1,7 +1,7 @@
 {
   "name": "Staf Reporting",
   "short_name": "Staf Report",
-  "description": "Aplikasi Pelaporan Harian NOC",
+  "description": "Aplikasi Pelaporan Harian Staf",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#4f46e5",

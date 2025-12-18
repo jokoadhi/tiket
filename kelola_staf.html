@@ -16,7 +16,7 @@
     <meta name="theme-color" content="#4f46e5" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kelola Staf NOC - Report App</title>
+    <title>Kelola Staf - Report App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -213,25 +213,90 @@
             </form>
           </div>
 
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                Total Staf
+              </p>
+              <h3 id="stat-total" class="text-2xl font-black text-gray-800">
+                0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                NOC
+              </p>
+              <h3 id="stat-noc" class="text-2xl font-black text-blue-600">0</h3>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                Teknisi
+              </p>
+              <h3 id="stat-teknisi" class="text-2xl font-black text-green-600">
+                0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                Biller
+              </p>
+              <h3 id="stat-biller" class="text-2xl font-black text-orange-600">
+                0
+              </h3>
+            </div>
+          </div>
+
           <h3 class="text-xl font-medium text-gray-800 mb-4">
             Daftar Staf Aktif
           </h3>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+              <thead class="bg-indigo-50/50 border-b-2 border-indigo-100">
                 <tr>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    onclick="loadStaf('nama')"
+                    class="px-6 py-4 text-left text-xs font-black text-indigo-900 uppercase tracking-widest cursor-pointer hover:bg-indigo-100 transition-all group"
                   >
-                    Nama Staf
+                    <div class="flex items-center">
+                      Nama Staf
+                      <span
+                        id="sort-icon-nama"
+                        class="ml-2 text-indigo-400 group-hover:text-indigo-600 transition"
+                        >↕</span
+                      >
+                    </div>
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    onclick="loadStaf('jabatan')"
+                    class="px-6 py-4 text-left text-xs font-black text-indigo-900 uppercase tracking-widest cursor-pointer hover:bg-indigo-100 transition-all group"
                   >
-                    Jabatan/Divisi
+                    <div class="flex items-center">
+                      Jabatan/Divisi
+                      <span
+                        id="sort-icon-jabatan"
+                        class="ml-2 text-indigo-400 group-hover:text-indigo-600 transition"
+                        >↕</span
+                      >
+                    </div>
                   </th>
                   <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    class="px-6 py-4 text-left text-xs font-black text-indigo-900 uppercase tracking-widest"
                   >
                     Aksi
                   </th>
@@ -289,6 +354,20 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase_init.js"></script>
     <script src="js/staf_logic.js"></script>
+
+    <script>
+      // Script Tambahan untuk Memastikan Fungsi Global Terbaca
+      window.onload = function () {
+        if (typeof window.loadStaf === "function") {
+          console.log("Fungsi loadStaf siap digunakan.");
+          window.loadStaf("nama"); // Panggil inisialisasi awal
+        } else {
+          console.error(
+            "Fungsi loadStaf gagal dimuat dari js/staf_logic.js. Periksa path file!"
+          );
+        }
+      };
+    </script>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
