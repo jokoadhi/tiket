@@ -474,10 +474,20 @@ function generateReportCard(data) {
   let terimaContent = (data.diterima || [])
     .map((item, index) => {
       let statusBadge = "";
-      // Keterangan 'dari siapa' diperbesar ke text-xs (12px)
-      let infoTengah = `<span class="text-xs text-gray-500 font-medium">dari ${getPrefix(
+
+      // LOGIKA BARU: Menampilkan rute transfer jika statusnya TF
+      let infoTengahText = `dari ${getPrefix(item.dari_staf)} ${
         item.dari_staf
-      )} ${item.dari_staf}</span>`;
+      }`;
+
+      // Jika statusnya TF dan ada data tujuan_staf, tampilkan rute lengkapnya
+      if (item.status === "TF" && item.tujuan_staf) {
+        infoTengahText += ` <span class="text-indigo-500 mx-1">➜</span> ke ${getPrefix(
+          item.tujuan_staf
+        )} ${item.tujuan_staf}`;
+      }
+
+      let infoTengah = `<span class="text-xs text-gray-500 font-medium">${infoTengahText}</span>`;
 
       if (item.status === "CLOSE")
         statusBadge =
