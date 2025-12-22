@@ -2,9 +2,7 @@
 <html lang="id">
   <head>
     <link rel="icon" type="image/png" href="assets/icons/ico.png" />
-
     <link rel="manifest" href="manifest.json" />
-
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -12,7 +10,6 @@
     />
     <meta name="apple-mobile-web-app-title" content="NOC Report" />
     <link rel="apple-touch-icon" href="assets/icons/ico.png" />
-
     <meta name="theme-color" content="#4f46e5" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,17 +17,45 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-      /* Memastikan konten utama bergeser di desktop */
       .content-area {
         transition: margin-left 0.3s ease-in-out;
         min-height: 100vh;
       }
       @media (min-width: 768px) {
         .content-area {
-          margin-left: 16rem; /* md:ml-64 */
+          margin-left: 16rem;
         }
       }
-      /* Blok CSS kustom yang lama dihapus karena menggunakan @apply */
+      input:disabled,
+      select:disabled {
+        background-color: #f3f4f6;
+        cursor: not-allowed;
+      }
+      /* Menjaga input tetap putih saat diisi atau autofill */
+      input:not([type="checkbox"]):not([type="radio"]),
+      select,
+      textarea {
+        background-color: #ffffff !important;
+        color: #1f2937 !important; /* Warna teks abu gelap agar terbaca jelas */
+      }
+
+      /* Khusus untuk menangani warna kuning/abu dari fitur autofill browser Chrome/Edge */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px white inset !important;
+        -webkit-text-fill-color: #1f2937 !important;
+      }
+
+      /* Memastikan saat fokus (diklik) background tidak berubah abu */
+      input:focus,
+      select:focus {
+        background-color: #ffffff !important;
+        outline: none;
+        border-color: #4f46e5 !important; /* Warna indigo saat fokus agar cantik */
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+      }
     </style>
   </head>
   <body class="bg-gray-50">
@@ -56,7 +81,6 @@
         </svg>
         <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
       </a>
-
       <div class="px-4">
         <a
           href="index.html"
@@ -132,12 +156,13 @@
                 ></path>
               </svg>
             </button>
-
-            <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
+            <h1
+              class="text-xl md:text-2xl font-extrabold text-gray-800"
+              id="page-title"
+            >
               Input Laporan Harian
             </h1>
           </div>
-
           <div
             class="flex items-center space-x-3 border-l pl-4 border-gray-100"
           >
@@ -155,7 +180,6 @@
                 @username
               </p>
             </div>
-
             <button
               onclick="handleLogout()"
               class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
@@ -178,11 +202,19 @@
           </div>
         </div>
       </header>
+
       <main class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="bg-white p-6 shadow-xl rounded-lg">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
-            Formulir Report Shift
-          </h2>
+          <div class="flex justify-between items-center mb-6 border-b pb-3">
+            <h2 class="text-2xl font-semibold text-gray-800" id="form-subtitle">
+              Formulir Report Shift
+            </h2>
+            <span
+              id="edit-indicator"
+              class="hidden bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold border border-amber-200 uppercase tracking-widest"
+              >Mode Edit</span
+            >
+          </div>
 
           <form id="laporan-form">
             <div
@@ -235,38 +267,39 @@
               <h3 class="text-xl font-medium text-indigo-700 mb-4">
                 1. Menerima Tiket (Transfer In)
               </h3>
-              <button
-                type="button"
-                onclick="openMassEditModal()"
-                class="bg-pink-500 text-white mb-3 px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-pink-600 transition duration-150 shadow-md flex items-center"
-              >
-                <svg
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div class="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onclick="openMassEditModal()"
+                  class="bg-pink-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-pink-600 transition shadow-md flex items-center"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  ></path>
-                </svg>
-                Ubah Massal
-              </button>
+                  <svg
+                    class="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    ></path>
+                  </svg>
+                  Ubah Massal
+                </button>
+              </div>
               <div id="transfer-in-container" class="space-y-3"></div>
               <button
                 type="button"
                 onclick="addTransferInRow()"
-                class="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150"
+                class="mt-3 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition"
               >
                 <svg
                   class="w-5 h-5 mr-2 -ml-1"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     stroke-linecap="round"
@@ -287,14 +320,13 @@
               <button
                 type="button"
                 onclick="addHandlingRow()"
-                class="mt-3 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150"
+                class="mt-3 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition"
               >
                 <svg
                   class="w-5 h-5 mr-2 -ml-1"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     stroke-linecap="round"
@@ -307,13 +339,20 @@
               </button>
             </div>
 
-            <div class="mt-10 pt-4 border-t">
+            <div class="mt-10 pt-4 border-t flex gap-4">
               <button
                 type="submit"
                 id="submit-btn"
-                class="w-full bg-green-600 text-white p-3 rounded-md text-lg font-semibold hover:bg-green-700 transition duration-150"
+                class="flex-grow bg-green-600 text-white p-3 rounded-md text-lg font-semibold hover:bg-green-700 transition"
               >
                 Simpan Laporan Shift
+              </button>
+              <button
+                type="button"
+                onclick="window.location.href='index.html'"
+                class="bg-gray-200 text-gray-700 p-3 rounded-md font-semibold hover:bg-gray-300 transition"
+              >
+                Batal
               </button>
             </div>
           </form>
@@ -332,7 +371,7 @@
         <h3
           class="text-xl font-bold text-indigo-700 mb-4 border-b pb-2 flex justify-between items-center"
         >
-          Aksi Massal Selektif (Transfer Masuk)
+          Aksi Massal Selektif
           <button
             onclick="closeMassEditModal()"
             class="text-gray-400 hover:text-gray-700"
@@ -352,87 +391,47 @@
             </svg>
           </button>
         </h3>
-
         <div class="space-y-4">
           <div>
-            <label
-              for="filter-column"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >1. Kolom yang akan difilter:</label
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >1. Kolom Filter:</label
             >
             <select
               id="filter-column"
               onchange="loadFilterValues()"
-              class="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-indigo-500 focus:border-indigo-500"
+              class="w-full p-2 border border-gray-300 rounded-md"
             >
               <option value="none">Pilih Kolom...</option>
               <option value="dari_staf">Staf Pengirim</option>
               <option value="status_terima">Status Tiket</option>
             </select>
           </div>
-
           <div id="filter-value-container" class="hidden">
-            <label
-              for="filter-value"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >2. Nilai saat ini yang ingin diubah/dihapus:</label
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >2. Nilai yang dicari:</label
             >
             <select
               id="filter-value"
-              disabled
+              class="w-full p-2 border border-gray-300 rounded-md"
               onchange="updateMassEditOptions()"
-              class="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Pilih Kolom Filter terlebih dahulu</option>
-            </select>
+            ></select>
           </div>
-
           <div id="new-value-container" class="hidden">
-            <label
-              for="new-value"
-              class="block text-sm font-medium text-gray-700 mb-1"
-              >3. Aksi yang akan dilakukan:</label
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >3. Aksi Baru:</label
             >
             <select
               id="new-value"
-              disabled
-              class="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Pilih Aksi / Nilai Baru...</option>
-            </select>
-            <p
-              id="mass-edit-instruction"
-              class="text-xs text-red-500 mt-1 hidden"
-            ></p>
+              class="w-full p-2 border border-gray-300 rounded-md"
+            ></select>
           </div>
-
-          <p
-            id="rows-affected-count"
-            class="text-sm text-gray-600 italic hidden pt-2 border-t mt-4"
-          >
-            Total baris yang cocok: <span id="matched-count">0</span>
-          </p>
-
           <button
             onclick="applyMassEdit()"
             id="apply-mass-edit-btn"
             disabled
-            class="w-full bg-green-500 text-white p-3 rounded-md font-semibold hover:bg-green-600 transition duration-150 shadow-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-green-500 text-white p-3 rounded-md font-semibold disabled:opacity-50"
           >
-            <svg
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m5.618-4.278A1.99 1.99 0 0013.882 2H10a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-3.118a1.99 1.99 0 00-.882-.278z"
-              ></path>
-            </svg>
-            Terapkan Aksi Selektif
+            Terapkan Perubahan
           </button>
         </div>
       </div>
@@ -445,80 +444,50 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // === 1. PENGATURAN TANGGAL & SHIFT OTOMATIS ===
+        // --- 1. SET OTOMATIS TANGGAL & SHIFT ---
         const inputTanggal = document.getElementById("input-tanggal");
         const inputShift = document.getElementById("input-shift");
         const today = new Date();
         const jam = today.getHours();
 
-        // Set Tanggal Otomatis
         if (inputTanggal) {
-          const yyyy = today.getFullYear();
-          const mm = String(today.getMonth() + 1).padStart(2, "0");
-          const dd = String(today.getDate()).padStart(2, "0");
-          inputTanggal.value = `${yyyy}-${mm}-${dd}`;
+          inputTanggal.value = today.toISOString().split("T")[0];
         }
 
-        // Set Shift Otomatis Berdasarkan Jam
         if (inputShift) {
-          let shiftOtomatis = "";
-
-          if (jam >= 8 && jam < 16) {
-            shiftOtomatis = "PAGI";
-          } else if (jam >= 16 && jam < 23) {
-            shiftOtomatis = "SORE";
-          } else {
-            // Jam 23.00 sampai sebelum 08.00 pagi
-            shiftOtomatis = "MALAM";
-          }
-
-          inputShift.value = shiftOtomatis;
-          console.log(`Jam sekarang: ${jam}. Shift diset ke: ${shiftOtomatis}`);
+          if (jam >= 8 && jam < 16) inputShift.value = "PAGI";
+          else if (jam >= 16 && jam < 23) inputShift.value = "SORE";
+          else inputShift.value = "MALAM";
         }
 
-        // === 2. SIDEBAR LOGIC ===
-        const menuToggle = document.querySelector("#menu-toggle");
-        const sidebar = document.querySelector("#sidebar");
-        const backdrop = document.querySelector("#backdrop");
+        // --- 2. SIDEBAR & USER INFO ---
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.getElementById("sidebar");
+        const backdrop = document.getElementById("backdrop");
 
-        function closeSidebar() {
+        menuToggle?.addEventListener("click", () => {
+          sidebar.classList.toggle("-translate-x-full");
+          backdrop.classList.toggle("opacity-0");
+          backdrop.classList.toggle("pointer-events-none");
+          backdrop.classList.toggle("opacity-50");
+        });
+
+        backdrop?.addEventListener("click", () => {
           sidebar.classList.add("-translate-x-full");
-          backdrop.classList.remove("opacity-50");
           backdrop.classList.add("opacity-0", "pointer-events-none");
-        }
+          backdrop.classList.remove("opacity-50");
+        });
 
-        function openSidebar() {
-          sidebar.classList.remove("-translate-x-full");
-          backdrop.classList.remove("opacity-0", "pointer-events-none");
-          backdrop.classList.add("opacity-50");
-        }
-
-        if (menuToggle && sidebar && backdrop) {
-          menuToggle.addEventListener("click", () => {
-            sidebar.classList.contains("-translate-x-full")
-              ? openSidebar()
-              : closeSidebar();
-          });
-          backdrop.addEventListener("click", closeSidebar);
-        }
-
-        // === 3. HEADER & USER DISPLAY ===
         const name = localStorage.getItem("userName");
         const username = localStorage.getItem("username");
-        const userDisplayName = document.getElementById("user-display-name");
-        const userDisplayUser = document.getElementById(
-          "user-display-username"
-        );
+        if (name)
+          document.getElementById("user-display-name").textContent = name;
+        if (username)
+          document.getElementById(
+            "user-display-username"
+          ).textContent = `@${username.toLowerCase()}`;
 
-        if (name && username) {
-          if (userDisplayName) userDisplayName.textContent = name;
-          if (userDisplayUser)
-            userDisplayUser.textContent = `@${username.toLowerCase()}`;
-        } else {
-          window.location.href = "login.html";
-        }
-
-        // === 4. DROPDOWN STAF AUTOMATION ===
+        // --- 3. DROPDOWN STAF ---
         const inputStaf = document.getElementById("input-staf");
         const cachedStaff = JSON.parse(
           localStorage.getItem("staffCache") || "[]"
@@ -526,10 +495,11 @@
         const role = (localStorage.getItem("userRole") || "user")
           .trim()
           .toLowerCase();
+        const isAdmin = role === "admin" || role === "administrator";
 
         if (inputStaf && cachedStaff.length > 0) {
           inputStaf.innerHTML =
-            '<option value="" disabled selected>Pilih Staf Pelaksana</option>';
+            '<option value="" disabled>Pilih Staf Pelaksana</option>';
           cachedStaff.forEach((staf) => {
             const opt = document.createElement("option");
             opt.value = staf.nama;
@@ -537,44 +507,30 @@
             inputStaf.appendChild(opt);
           });
 
-          // Jika user biasa, otomatis pilih namanya sendiri
-          if (role !== "admin" && role !== "administrator") {
+          // Logika: User biasa terkunci di namanya sendiri, Admin bisa pilih siapa saja
+          if (!isAdmin) {
             inputStaf.value = name;
+            inputStaf.disabled = true;
           }
+        }
+
+        // --- 4. PROTEKSI ADMIN ELEMENT ---
+        if (!isAdmin) {
+          document
+            .querySelectorAll(".admin-only")
+            .forEach((el) => el.classList.add("hidden"));
         }
       });
 
-      // === 5. PROTEKSI ADMIN (IIFE) ===
-      (function () {
-        const rawRole = localStorage.getItem("userRole") || "user";
-        const role = rawRole.trim().toLowerCase();
-        const isAdmin = role === "admin" || role === "administrator";
-
-        if (!isAdmin) {
-          const adminElements = document.querySelectorAll(".admin-only");
-          adminElements.forEach((el) =>
-            el.style.setProperty("display", "none", "important")
-          );
-
-          if (window.location.pathname.includes("kelola_staf.html")) {
-            window.location.href = "index.html";
-          }
-        }
-      })();
-
-      // === 6. FUNGSI LOGOUT ===
       window.handleLogout = function () {
         Swal.fire({
-          title: "Logout dari Sistem?",
-          text: "Sesi Anda akan diakhiri.",
+          title: "Logout?",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#ef4444",
-          cancelButtonColor: "#4f46e5",
           confirmButtonText: "Ya, Logout",
-          cancelButtonText: "Batal",
-        }).then((result) => {
-          if (result.isConfirmed) {
+        }).then((res) => {
+          if (res.isConfirmed) {
             localStorage.clear();
             window.location.href = "login.html";
           }
