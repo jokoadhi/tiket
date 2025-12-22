@@ -27,6 +27,24 @@ async function initForm() {
   } else {
     // Jika bukan edit, cek apakah ada data SALINAN di sessionStorage
     loadCopiedData();
+
+    // OTOMATISASI SHIFT:
+    // Jika setelah loadCopiedData (atau form baru) shift masih kosong/default,
+    // maka isi otomatis berdasarkan jam saat ini.
+    const shiftElem = document.getElementById("input-shift");
+    if (shiftElem) {
+      shiftElem.value = getAutomaticShift();
+    }
+
+    // Opsional: Otomatisasi Tanggal hari ini jika belum terisi
+    const tglElem = document.getElementById("input-tanggal");
+    if (tglElem && !tglElem.value) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      tglElem.value = `${year}-${month}-${day}`;
+    }
   }
 }
 
@@ -116,12 +134,48 @@ function loadCopiedData() {
   }
 }
 
-function fillFormData(data) {
-  if (data.staf_pelaksana) inputStaf.value = data.staf_pelaksana;
-  if (data.shift) document.getElementById("input-shift").value = data.shift;
-  if (data.tanggal)
-    document.getElementById("input-tanggal").value = data.tanggal;
+function getAutomaticShift() {
+  const hour = new Date().getHours(); // Mengambil jam saat ini (0-23)
 
+  if (hour >= 8 && hour < 16) {
+    return "PAGI";
+  } else if (hour >= 16 && hour < 23) {
+    return "SORE";
+  } else {
+    // Jam 23.00 sampai 07.59
+    return "MALAM";
+  }
+}
+
+function fillFormData(data) {
+  // 1. Ambil referensi elemen
+  const shiftElem = document.getElementById("input-shift");
+  const tglElem = document.getElementById("input-tanggal");
+
+  // 2. Pastikan semua elemen aktif (tidak disabled) dan kursor normal
+  [inputStaf, shiftElem, tglElem].forEach((el) => {
+    if (el) {
+      el.disabled = false;
+      el.style.cursor = "default";
+      el.classList.remove("bg-gray-200", "cursor-not-allowed");
+      el.classList.add("bg-white");
+    }
+  });
+
+  // 3. PENGATURAN DEFAULT DROPDOWN STAF
+  // Mengatur kembali ke pilihan default (kosong/placeholder)
+  inputStaf.value = "";
+
+  // 4. Isi data Shift dan Tanggal dari data yang disalin
+  if (data.shift && shiftElem) {
+    shiftElem.value = data.shift;
+  }
+
+  if (data.tanggal && tglElem) {
+    tglElem.value = data.tanggal;
+  }
+
+  // 5. Reset dan isi kontainer tiket
   transferInContainer.innerHTML = "";
   handlingContainer.innerHTML = "";
 
