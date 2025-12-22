@@ -148,11 +148,10 @@ function getAutomaticShift() {
 }
 
 function fillFormData(data) {
-  // 1. Ambil referensi elemen
   const shiftElem = document.getElementById("input-shift");
   const tglElem = document.getElementById("input-tanggal");
 
-  // 2. Pastikan semua elemen aktif (tidak disabled) dan kursor normal
+  // 1. Pastikan semua elemen aktif & kursor normal
   [inputStaf, shiftElem, tglElem].forEach((el) => {
     if (el) {
       el.disabled = false;
@@ -162,15 +161,25 @@ function fillFormData(data) {
     }
   });
 
-  // 3. PENGATURAN DEFAULT DROPDOWN STAF
-  // Mengatur kembali ke pilihan default (kosong/placeholder)
-  inputStaf.value = "";
-
-  // 4. Isi data Shift dan Tanggal dari data yang disalin
-  if (data.shift && shiftElem) {
-    shiftElem.value = data.shift;
+  // 2. LOGIKA STAF PELAKSANA (Kondisional)
+  if (isEditMode) {
+    // Jika MODE EDIT: Isi sesuai data asli laporan
+    inputStaf.value = data.staf_pelaksana || "";
+  } else {
+    // Jika MODE SALIN: Kosongkan agar user pilih sendiri
+    inputStaf.value = "";
   }
 
+  // 3. LOGIKA SHIFT (Kondisional)
+  if (isEditMode) {
+    // Jika MODE EDIT: Pakai shift asli laporan
+    if (shiftElem) shiftElem.value = data.shift || "";
+  } else {
+    // Jika MODE SALIN: Pakai deteksi jam otomatis terbaru
+    if (shiftElem) shiftElem.value = getAutomaticShift();
+  }
+
+  // 4. LOGIKA TANGGAL
   if (data.tanggal && tglElem) {
     tglElem.value = data.tanggal;
   }
