@@ -74,7 +74,9 @@ window.addTransferInRow = function (data = {}) {
     "space-y-2",
     "md:space-y-0",
     "md:space-x-2",
-    "mb-2"
+    "mb-2",
+    "transition-colors", // Animasi halus saat perubahan warna
+    "duration-200"
   );
 
   // Set nilai default dari data yang disalin
@@ -147,7 +149,16 @@ window.addTransferInRow = function (data = {}) {
             </button>
         </div>
     `;
+
   transferInContainer.appendChild(newRow);
+
+  // --- INISIALISASI WARNA ---
+  // Jalankan toggleTransferTarget segera setelah elemen ditambahkan ke DOM
+  // agar status CLOSE langsung merubah background menjadi hijau.
+  const selectStatus = newRow.querySelector('select[name="status_terima"]');
+  if (selectStatus) {
+    window.toggleTransferTarget(selectStatus);
+  }
 };
 
 /**
@@ -172,7 +183,9 @@ window.addHandlingRow = function (data = {}) {
     "space-y-2",
     "md:space-y-0",
     "md:space-x-2",
-    "mb-2"
+    "mb-2",
+    "transition-colors", // Efek transisi halus
+    "duration-200"
   );
 
   // Set nilai default dari data yang disalin
@@ -229,16 +242,43 @@ window.addHandlingRow = function (data = {}) {
             </button>
         </div>
     `;
+
   handlingContainer.appendChild(newRow);
+
+  // Jalankan toggle untuk menyesuaikan warna saat baris dibuat
+  const selectAksi = newRow.querySelector('select[name="aksi_handling"]');
+  if (selectAksi) {
+    window.toggleTransferTarget(selectAksi);
+  }
 };
 
 window.toggleTransferTarget = function (selectElement) {
-  const parentContainer = selectElement.closest(".flex.flex-col");
-  // Perbaikan: Mencari target select dengan nama yang benar, baik di Diterima atau Ditangani
-  const targetSelect = parentContainer
-    ? parentContainer.querySelector(".transfer-target")
+  // 1. Mencari container utama baris (div dengan class bg-indigo-50)
+  const rowContainer = selectElement.closest(".flex.flex-col");
+  // 2. Mencari target select staf tujuan
+  const targetSelect = rowContainer
+    ? rowContainer.querySelector(".transfer-target")
     : null;
 
+  if (!rowContainer) return;
+
+  // --- LOGIKA PERUBAHAN BACKGROUND ---
+  // Hapus class warna dasar (indigo) dan warna sukses (green) agar tidak bentrok
+  rowContainer.classList.remove(
+    "bg-indigo-50",
+    "bg-green-100",
+    "border-green-300"
+  );
+
+  if (selectElement.value === "CLOSE") {
+    // Jika status CLOSE, ubah ke Hijau
+    rowContainer.classList.add("bg-green-100", "border-green-300");
+  } else {
+    // Jika PROGRESS atau TF, kembalikan ke warna standar (Indigo)
+    rowContainer.classList.add("bg-indigo-50");
+  }
+
+  // --- LOGIKA AKTIVASI STAF TUJUAN (Fungsi Lama Anda) ---
   if (!targetSelect) return;
 
   if (selectElement.value === "TF") {
