@@ -52,6 +52,17 @@ async function loadStafDropdown() {
   try {
     const snapshot = await stafRef.orderBy("nama").get();
     stafDataCache = [];
+
+    // Pastikan elemen aktif dan bisa diklik oleh SEMUA role
+    inputStaf.disabled = false;
+    inputStaf.style.cursor = "default";
+    inputStaf.classList.remove(
+      "bg-gray-200",
+      "cursor-not-allowed",
+      "opacity-50"
+    );
+    inputStaf.classList.add("bg-white");
+
     inputStaf.innerHTML =
       '<option value="" disabled selected>Pilih Staf Pelaksana</option>';
 
@@ -151,31 +162,29 @@ function fillFormData(data) {
   const shiftElem = document.getElementById("input-shift");
   const tglElem = document.getElementById("input-tanggal");
 
-  // 1. Pastikan semua elemen aktif & kursor normal
+  // 1. Pastikan semua elemen aktif & kursor normal untuk SEMUA user
   [inputStaf, shiftElem, tglElem].forEach((el) => {
     if (el) {
       el.disabled = false;
+      el.readOnly = false; // Memastikan tidak hanya baca
       el.style.cursor = "default";
-      el.classList.remove("bg-gray-200", "cursor-not-allowed");
+      el.classList.remove("bg-gray-200", "cursor-not-allowed", "opacity-50");
       el.classList.add("bg-white");
     }
   });
 
   // 2. LOGIKA STAF PELAKSANA (Kondisional)
   if (isEditMode) {
-    // Jika MODE EDIT: Isi sesuai data asli laporan
     inputStaf.value = data.staf_pelaksana || "";
   } else {
-    // Jika MODE SALIN: Kosongkan agar user pilih sendiri
+    // Mode Salin: dikosongkan agar user pilih sendiri, tapi dipastikan BISA dipilih
     inputStaf.value = "";
   }
 
   // 3. LOGIKA SHIFT (Kondisional)
   if (isEditMode) {
-    // Jika MODE EDIT: Pakai shift asli laporan
     if (shiftElem) shiftElem.value = data.shift || "";
   } else {
-    // Jika MODE SALIN: Pakai deteksi jam otomatis terbaru
     if (shiftElem) shiftElem.value = getAutomaticShift();
   }
 
@@ -199,6 +208,9 @@ function fillFormData(data) {
   } else {
     addHandlingRow();
   }
+
+  // 6. AKTIFKAN PROTEKSI TUTUP TAB
+  isFormDirty = true;
 }
 
 // ===================================================
