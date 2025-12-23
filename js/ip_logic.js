@@ -303,9 +303,7 @@ window.openInfoModal = async (childId, cidr) => {
       const desc = savedDetails[ip] || defaultLabel;
 
       // Jika Network/Broadcast, kita beri warna teks berbeda agar terlihat spesial
-      const descClass = isSystemIp
-        ? "text-amber-600 font-bold italic"
-        : "text-gray-500";
+      const descClass = isSystemIp ? "text-gray-500" : "text-gray-500";
 
       const row = `
         <tr class="hover:bg-emerald-50 transition-colors border-b border-gray-100">
@@ -401,14 +399,36 @@ function loadIPData() {
     const tbody = document.getElementById("ip-list-body");
     if (!tbody) return;
     tbody.innerHTML = "";
+
     const allDocs = [];
     snapshot.forEach((doc) => allDocs.push({ id: doc.id, ...doc.data() }));
+
     updateParentDropdowns(allDocs);
+
+    // 1. Pisahkan Parent dan Child
     const parents = allDocs.filter((d) => !d.parent_id);
     const children = allDocs.filter((d) => d.parent_id);
+
+    // 2. Fungsi pembantu untuk mengubah IP String ke Angka agar sortir akurat
+    const ipToNumber = (ip) => {
+      return (
+        ip
+          .split("/")[0]
+          .split(".")
+          .reduce((acc, octet) => (acc << 8) + parseInt(octet), 0) >>> 0
+      );
+    };
+
+    // 3. Render Parent
     parents.forEach((parent) => {
       renderRow(parent, false);
-      const myChildren = children.filter((c) => c.parent_id === parent.id);
+
+      // 4. Sortir Child milik parent ini berdasarkan nilai IP-nya
+      const myChildren = children
+        .filter((c) => c.parent_id === parent.id)
+        .sort((a, b) => ipToNumber(a.ip_address) - ipToNumber(b.ip_address));
+
+      // 5. Render Child yang sudah urut
       myChildren.forEach((child, index) => {
         renderRow(child, true, index === myChildren.length - 1);
       });

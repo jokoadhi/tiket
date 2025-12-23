@@ -135,6 +135,8 @@ async function loadCopiedData() {
 
   try {
     const data = JSON.parse(copiedDataJson);
+    // Ambil nama staf pelaksana dari laporan yang disalin untuk mengisi kolom "Dari Staf"
+    const stafLaporanLama = data.staf_pelaksana;
 
     // --- LANGKAH 1: Ambil Referensi Jabatan Staf dari Firestore ---
     const stafSnapshot = await db.collection("staf").get();
@@ -171,9 +173,10 @@ async function loadCopiedData() {
       }
 
       // Selain kondisi di atas (misal masih PROGRESS atau TF ke NOC), masukkan ke list baru
+      // Kolom 'dari_staf' otomatis diisi dengan nama staf dari laporan yang disalin
       listMenerimaBaru.push({
         tiket_id: item.tiket_id,
-        dari_staf: item.dari_staf,
+        dari_staf: stafLaporanLama,
         status: "PROGRESS",
         tujuan_staf: null,
       });
@@ -194,7 +197,8 @@ async function loadCopiedData() {
         if (jabatanTujuan === "NOC") {
           listMenerimaBaru.push({
             tiket_id: item.tiket_id,
-            dari_staf: data.staf_pelaksana,
+            // Tiket ini operan dari staf sebelumnya, maka 'dari_staf' adalah pemilik laporan tersebut
+            dari_staf: stafLaporanLama,
             status: "PROGRESS",
             tujuan_staf: null,
           });
@@ -228,7 +232,7 @@ async function loadCopiedData() {
     Swal.fire({
       icon: "success",
       title: "Sinkronisasi Berhasil",
-      text: "Tiket operan ke NOC telah disusun. Tiket ke divisi lain telah dibersihkan.",
+      text: `Tiket operan dari ${stafLaporanLama} telah disusun otomatis.`,
       timer: 2500,
     });
   } catch (e) {
