@@ -123,25 +123,112 @@ async function setupEditMode(docId) {
 // ===================================================
 // 3. LOGIKA SALIN DATA (DARI SESSION STORAGE)
 // ===================================================
-function loadCopiedData() {
+async function loadCopiedData() {
   const copiedDataJson = sessionStorage.getItem("copiedReportData");
   if (!copiedDataJson) {
+    if (transferInContainer) transferInContainer.innerHTML = "";
+    if (handlingContainer) handlingContainer.innerHTML = "";
     addTransferInRow();
     addHandlingRow();
     return;
   }
+
   try {
     const data = JSON.parse(copiedDataJson);
-    fillFormData(data);
+
+    // --- LANGKAH 1: Ambil Referensi Jabatan Staf dari Firestore ---
+    const stafSnapshot = await db.collection("staf").get();
+    const mapJabatan = {};
+
+    stafSnapshot.forEach((doc) => {
+      const d = doc.data();
+      if (d.nama && d.jabatan) {
+        mapJabatan[d.nama.toUpperCase()] = d.jabatan.toUpperCase();
+      }
+    });
+
+    // --- LANGKAH 2: Proses Data "Menerima Tiket" ---
+    let listMenerimaBaru = [];
+    const oldDiterima = data.diterima || [];
+
+    oldDiterima.forEach((item) => {
+      const status = (item.status || "").toUpperCase();
+      const namaTujuan = (item.tujuan_staf || "").toUpperCase();
+      const jabatanTujuan = mapJabatan[namaTujuan] || "";
+
+      // A. Jika status CLOSE -> Hapus
+      if (status === "CLOSE") return;
+
+      // B. Jika status TF dan tujuannya adalah TEKNISI -> Hapus
+      if (status === "TF" && jabatanTujuan === "TEKNISI") {
+        console.log(
+          `❌ Tiket ${item.tiket_id} dihapus dari Menerima (TF ke Teknisi: ${namaTujuan})`
+        );
+        return;
+      }
+
+      // Selain itu, tetap masukkan ke list Menerima dengan reset status
+      listMenerimaBaru.push({
+        tiket_id: item.tiket_id,
+        dari_staf: item.dari_staf,
+        status: "PROGRESS",
+        tujuan_staf: null,
+      });
+    });
+
+    // --- LANGKAH 3: Proses Data "Menangani Tiket" ---
+    const listMenanganiLama = data.ditangani || [];
+
+    listMenanganiLama.forEach((item) => {
+      const aksi = (item.aksi || "").toUpperCase();
+      const namaTujuan = (item.tujuan_staf || "").toUpperCase();
+      const jabatanTujuan = mapJabatan[namaTujuan] || "";
+
+      const isTransfer = aksi === "TF" || aksi === "TRANSFER";
+
+      if (isTransfer) {
+        // A. Jika jabatan adalah NOC -> Pindah ke Menerima
+        if (jabatanTujuan === "NOC") {
+          listMenerimaBaru.push({
+            tiket_id: item.tiket_id,
+            dari_staf: data.staf_pelaksana,
+            status: "PROGRESS",
+            tujuan_staf: null,
+          });
+          console.log(
+            `✅ ${item.tiket_id} Pindah ke Menerima (Tujuan: ${namaTujuan} adalah NOC)`
+          );
+        }
+        // B. Jika jabatan adalah TEKNISI -> Hapus
+        else if (jabatanTujuan === "TEKNISI") {
+          console.log(
+            `❌ ${item.tiket_id} Dihilangkan (Tujuan: ${namaTujuan} adalah TEKNISI)`
+          );
+        }
+      }
+    });
+
+    // --- LANGKAH 4: Update UI ---
+    const dataSiapInput = {
+      ...data,
+      diterima: listMenerimaBaru,
+      ditangani: [], // Menangani selalu dikosongkan
+    };
+
+    if (transferInContainer) transferInContainer.innerHTML = "";
+    if (handlingContainer) handlingContainer.innerHTML = "";
+
+    fillFormData(dataSiapInput);
     sessionStorage.removeItem("copiedReportData");
+
     Swal.fire({
-      icon: "info",
-      title: "Data Berhasil Ditempel",
-      text: "Silakan sesuaikan jika ada perubahan.",
+      icon: "success",
+      title: "Sinkronisasi Selesai",
+      text: "Tiket ke Teknisi & Close telah dibersihkan otomatis.",
       timer: 2000,
     });
   } catch (e) {
-    console.error("Gagal parse data salinan", e);
+    console.error("Gagal sinkronisasi data:", e);
   }
 }
 
