@@ -424,4 +424,140 @@ laporanForm.addEventListener("submit", async (e) => {
   }
 });
 
+// ===================================================
+// LOGIKA UBAH MASSAL (MASS EDIT)
+// ===================================================
+
+/**
+ * Membuka modal SweetAlert2 untuk mengubah status dan staf tujuan
+ * pada banyak baris sekaligus.
+ */
+window.openMassEditModal = async function () {
+  if (typeof Swal === "undefined") return;
+
+  const { value: formValues } = await Swal.fire({
+    title: "Ubah Massal Data Tiket",
+    html: `
+            <div class="text-left space-y-4">
+                <div class="mb-3">
+                    <label class="block text-sm font-bold mb-1 text-gray-700">Target Perubahan:</label>
+                    <select id="swal-target" class="swal2-input !m-0 !w-full !text-sm bg-gray-50">
+                        <option value="terima">Hanya Baris "Menerima Tiket"</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold mb-1 text-gray-700">Set "Menerima Dari" Menjadi:</label>
+                    <select id="swal-asal" class="swal2-input !m-0 !w-full !text-sm">
+                        <option value="">-- Jangan Ubah Asal Staf --</option>
+                        ${generateStafOptions("")}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-bold mb-1 text-gray-700">Set Status Menjadi:</label>
+                    <select id="swal-status" class="swal2-input !m-0 !w-full !text-sm">
+                        <option value="">-- Jangan Ubah Status --</option>
+                        <option value="PROGRESS">PROGRESS</option>
+                        <option value="CLOSE">CLOSE</option>
+                        <option value="TF">TF (Transfer)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1 text-gray-700">Set Staf Tujuan (Jika TF):</label>
+                    <select id="swal-staf" class="swal2-input !m-0 !w-full !text-sm" disabled>
+                        <option value="">-- Pilih Staf (Hanya untuk TF) --</option>
+                        ${generateStafOptions("")}
+                    </select>
+                </div>
+            </div>
+        `,
+    didOpen: () => {
+      const statusSelect = document.getElementById("swal-status");
+      const stafSelect = document.getElementById("swal-staf");
+
+      statusSelect.addEventListener("change", () => {
+        if (statusSelect.value === "TF") {
+          stafSelect.disabled = false;
+          stafSelect.classList.remove("bg-gray-100", "cursor-not-allowed");
+        } else {
+          stafSelect.disabled = true;
+          stafSelect.value = "";
+          stafSelect.classList.add("bg-gray-100", "cursor-not-allowed");
+        }
+      });
+    },
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: "Terapkan Perubahan",
+    cancelButtonText: "Batal",
+    confirmButtonColor: "#ec4899",
+    preConfirm: () => {
+      return {
+        target: document.getElementById("swal-target").value,
+        asal: document.getElementById("swal-asal").value,
+        status: document.getElementById("swal-status").value,
+        staf: document.getElementById("swal-staf").value,
+      };
+    },
+  });
+
+  if (formValues) {
+    applyMassEdit(formValues);
+  }
+};
+
+/**
+ * Mengeksekusi perubahan pada elemen DOM berdasarkan input dari modal
+ */
+function applyMassEdit(config) {
+  // Hanya targetkan kontainer "Menerima Tiket"
+  const container = transferInContainer;
+  if (!container) return;
+
+  const rows = container.querySelectorAll(".flex-col");
+  let affectedRows = 0;
+
+  rows.forEach((row) => {
+    // 1. UPDATE "MENERIMA DARI"
+    if (config.asal) {
+      const asalSelect = row.querySelector('select[name="dari_staf"]');
+      if (asalSelect) {
+        asalSelect.value = config.asal;
+      }
+    }
+
+    // 2. UPDATE STATUS
+    if (config.status) {
+      const statusSelect = row.querySelector('select[name="status_terima"]');
+      if (statusSelect) {
+        statusSelect.value = config.status;
+        // Pastikan fungsi toggleTransferTarget tersedia secara global
+        if (window.toggleTransferTarget) {
+          window.toggleTransferTarget(statusSelect);
+        }
+      }
+    }
+
+    // 3. UPDATE STAF TUJUAN (Hanya jika baris tersebut statusnya TF)
+    const targetSelect = row.querySelector(".transfer-target");
+    if (targetSelect && config.staf && !targetSelect.disabled) {
+      targetSelect.value = config.staf;
+    }
+
+    affectedRows++;
+  });
+
+  if (affectedRows > 0) {
+    isFormDirty = true;
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil",
+      text: `${affectedRows} baris "Menerima Tiket" diperbarui secara massal.`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  } else {
+    Swal.fire("Info", "Tidak ada baris tiket untuk diubah.", "info");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", initForm);
