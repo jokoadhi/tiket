@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Management IP Hierarchy - NOC Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="icon" type="image/png" href="assets/icons/ico.png" />
+    <style>
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+      .content-area {
+        transition: margin-left 0.3s ease-in-out;
+        min-height: 100vh;
+      }
+      @media (min-width: 768px) {
+        .content-area {
+          margin-left: 16rem;
+        }
+      }
+
+      /* Cell untuk anak (Garis Hierarki) */
+      .hierarchy-cell {
+        position: relative;
+        padding-left: 3.5rem !important;
+      }
+
+      /* Garis Vertikal & Horizontal tetap sama */
+      .hierarchy-cell::before {
+        content: "";
+        position: absolute;
+        left: 1.8rem;
+        top: -1px;
+        bottom: 0;
+        width: 2px;
+        background-color: #e2e8f0;
+        z-index: 10;
+      }
+
+      .hierarchy-cell::after {
+        content: "";
+        position: absolute;
+        left: 1.8rem;
+        top: 50%;
+        width: 1rem;
+        height: 2px;
+        background-color: #e2e8f0;
+        z-index: 10;
+      }
+
+      /* WARNA BARIS ANAK (Full row) */
+      tr.child-row {
+        background-color: #fcfdfe; /* Warna biru-abu sangat tipis agar beda dari induk */
+      }
+
+      /* Hover efek yang seragam */
+      tr.hover-row:hover {
+        background-color: #f1f5f9 !important; /* Warna hover sedikit lebih gelap dari background anak */
+      }
+      /* Memberikan indikasi bahwa elemen memiliki informasi tambahan */
+      .cursor-help {
+        cursor: help;
+        border-bottom: 1px dashed #cbd5e1; /* Garis bawah tipis sebagai penanda */
+      }
+
+      .cursor-help:hover {
+        color: #4f46e5; /* Berubah warna sedikit saat di-hover */
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <div
+      id="backdrop"
+      class="fixed inset-0 bg-black opacity-0 z-30 transition-opacity duration-300 md:hidden pointer-events-none"
+    ></div>
+
+    <nav
+      class="bg-indigo-800 text-white w-64 space-y-6 py-7 px-2 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 ease-in-out z-40 shadow-2xl"
+      id="sidebar"
+    >
+      <a
+        href="index.html"
+        class="text-white flex items-center space-x-3 px-4 mb-8 border-b border-indigo-700 pb-4"
+      >
+        <svg
+          class="w-7 h-7 text-indigo-300"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" fill="currentColor"></path>
+        </svg>
+        <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
+      </a>
+
+      <div class="px-4">
+        <a
+          href="index.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            ></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+
+        <a
+          href="input_tiket.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+          <span>Input Laporan</span>
+        </a>
+
+        <a
+          href="kelola_staf.html"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.214-.029-.426-.08-.632M20 10V8a2 2 0 00-2-2h-2m2 2h2m-2-2h-2m2 0v-2a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h2m-2-2h2m-2 0v-2a2 2 0 002-2h2m-2 2h2m-2 2h2m2-10a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            ></path>
+          </svg>
+          <span>Kelola Staf</span>
+        </a>
+
+        <a
+          href="kelola_ip.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold mt-1"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            ></path>
+          </svg>
+          <span>Kelola IP</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      <header class="sticky top-0 bg-white shadow-md p-4 mb-4 md:mb-8 z-30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button
+              class="p-2 rounded-md hover:bg-gray-100 transition md:hidden"
+              id="menu-toggle"
+            >
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
+            <h1
+              class="text-xl md:text-2xl font-extrabold text-gray-800"
+              id="page-title"
+            >
+              Management IP Address
+            </h1>
+          </div>
+
+          <div
+            class="flex items-center space-x-3 border-l pl-4 border-gray-100"
+          >
+            <div class="text-right hidden sm:block">
+              <p
+                id="user-display-name"
+                class="text-sm font-bold text-gray-800 leading-none capitalize"
+              >
+                Loading...
+              </p>
+              <p
+                id="user-display-username"
+                class="text-[14px] font-medium text-indigo-400 mt-1"
+              >
+                @username
+              </p>
+            </div>
+            <button
+              onclick="handleLogout()"
+              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
+              title="Keluar"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-6xl mx-auto px-4 pb-12">
+        <div
+          class="bg-white p-6 shadow-lg rounded-xl mb-8 border border-gray-100"
+        >
+          <h3
+            class="text-sm font-black text-gray-400 uppercase mb-4 tracking-widest"
+          >
+            Tambah Node / Subnet
+          </h3>
+          <form
+            id="form-tambah-ip"
+            class="grid grid-cols-1 md:grid-cols-5 gap-4"
+          >
+            <div class="md:col-span-1">
+              <input
+                type="text"
+                id="ip-address"
+                placeholder="192.168.1.0/24"
+                required
+                class="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono"
+              />
+            </div>
+            <div class="md:col-span-1">
+              <input
+                type="text"
+                id="nama-perangkat"
+                placeholder="Deskripsi"
+                required
+                class="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              />
+            </div>
+            <div>
+              <select
+                id="kategori-ip"
+                class="w-full p-2.5 border border-gray-200 rounded-lg bg-white text-sm"
+              >
+                <option value="NETWORK">NETWORK (INDUK)</option>
+                <option value="OLT">OLT</option>
+                <option value="ROUTER">ROUTER</option>
+                <option value="SERVER">SERVER</option>
+              </select>
+            </div>
+            <div>
+              <select
+                id="select-parent"
+                class="w-full p-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm font-medium"
+              >
+                <option value="">-- Tanpa Induk --</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              class="bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+            >
+              Simpan Data
+            </button>
+          </form>
+        </div>
+
+        <div
+          class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100"
+        >
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 table-fixed">
+              <thead
+                class="bg-gray-50 text-gray-500 uppercase text-[10px] font-black tracking-widest"
+              >
+                <tr>
+                  <th class="px-6 py-4 text-left">Alokasi IP Address</th>
+                  <th class="px-6 py-4 text-left">Deskripsi / Perangkat</th>
+
+                  <th class="w-32 px-6 py-4 text-center">Kategori</th>
+                  <th class="w-32 px-6 py-4 text-center">Update</th>
+                  <th class="w-40 px-6 py-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody
+                id="ip-list-body"
+                class="divide-y divide-gray-100 bg-white"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div
+      id="edit-ip-modal"
+      class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100"
+      >
+        <h4
+          class="text-xl font-black text-gray-800 mb-6 uppercase tracking-tight"
+        >
+          Edit Perangkat
+        </h4>
+        <input type="hidden" id="edit-ip-id" />
+
+        <div class="space-y-5">
+          <div>
+            <label
+              class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1"
+              >IP Address</label
+            >
+            <input
+              type="text"
+              id="edit-ip-address"
+              class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1"
+              >Nama Perangkat</label
+            >
+            <input
+              type="text"
+              id="edit-nama-perangkat"
+              class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1"
+                >Kategori</label
+              >
+              <select
+                id="edit-kategori-ip"
+                class="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm"
+              >
+                <option value="NETWORK">NETWORK</option>
+                <option value="OLT">OLT</option>
+                <option value="ROUTER">ROUTER</option>
+                <option value="SERVER">SERVER</option>
+                <option value="RADIO">RADIO</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1"
+                >Parent</label
+              >
+              <select
+                id="edit-parent-ip"
+                class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-sm"
+              >
+                <option value="">-- Tanpa Induk --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-10 space-x-3">
+          <button
+            onclick="closeEditModal()"
+            class="px-6 py-2.5 text-gray-400 font-bold hover:text-gray-600 transition uppercase text-xs"
+          >
+            Batal
+          </button>
+          <button
+            id="btn-update-ip"
+            class="px-8 py-2.5 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition uppercase text-xs tracking-widest"
+          >
+            Update Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="info-ip-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all"
+      >
+        <div
+          class="bg-emerald-600 p-4 flex justify-between items-center text-white"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              ></path>
+            </svg>
+            Alokasi Host di Subnet: <span id="info-parent-name"></span>
+          </h3>
+          <button
+            onclick="closeInfoModal()"
+            class="hover:bg-emerald-500 rounded-full p-1 transition"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div class="p-0 max-h-[70vh] overflow-y-auto">
+          <table class="w-full text-sm text-left">
+            <thead
+              class="bg-gray-100 text-gray-600 uppercase text-[11px] sticky top-0"
+            >
+              <tr>
+                <th class="px-6 py-3">Host IP</th>
+                <th class="px-6 py-3">Deskripsi / Perangkat</th>
+                <th class="px-6 py-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody
+              id="info-device-list"
+              class="divide-y divide-gray-100"
+            ></tbody>
+          </table>
+        </div>
+        <div class="bg-gray-50 p-4 flex justify-between items-center">
+          <p class="text-[11px] text-gray-400 font-mono">
+            *Klik Edit untuk memperbarui nama perangkat pada IP spesifik.
+          </p>
+          <button
+            onclick="closeInfoModal()"
+            class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+    <script src="js/ip_logic.js"></script>
+  </body>
+</html>
