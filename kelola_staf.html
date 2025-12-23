@@ -2,9 +2,7 @@
 <html lang="id">
   <head>
     <link rel="icon" type="image/png" href="assets/icons/ico.png" />
-
     <link rel="manifest" href="manifest.json" />
-
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -12,7 +10,6 @@
     />
     <meta name="apple-mobile-web-app-title" content="NOC Report" />
     <link rel="apple-touch-icon" href="assets/icons/ico.png" />
-
     <meta name="theme-color" content="#4f46e5" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,14 +17,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-      /* Memastikan konten utama bergeser di desktop */
       .content-area {
         transition: margin-left 0.3s ease-in-out;
         min-height: 100vh;
       }
       @media (min-width: 768px) {
         .content-area {
-          margin-left: 16rem; /* md:ml-64 */
+          margin-left: 16rem;
         }
       }
     </style>
@@ -55,7 +51,6 @@
         </svg>
         <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
       </a>
-
       <div class="px-4">
         <a
           href="index.html"
@@ -89,7 +84,7 @@
         </a>
         <a
           href="kelola_staf.html"
-          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold text-white"
         >
           <svg
             class="w-5 h-5"
@@ -131,12 +126,10 @@
                 ></path>
               </svg>
             </button>
-
             <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
               Kelola Data Staf
             </h1>
           </div>
-
           <div
             class="flex items-center space-x-3 border-l pl-4 border-gray-100"
           >
@@ -154,7 +147,6 @@
                 @username
               </p>
             </div>
-
             <button
               onclick="handleLogout()"
               class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
@@ -177,6 +169,7 @@
           </div>
         </div>
       </header>
+
       <main class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
         <div class="bg-white p-6 shadow-xl rounded-lg">
           <div class="mb-8 border p-4 rounded-lg bg-indigo-50/50">
@@ -202,6 +195,8 @@
                 <option value="NOC">NOC</option>
                 <option value="TEKNISI">TEKNISI</option>
                 <option value="BILLER">BILLER</option>
+                <option value="LOGISTIK">LOGISTIK</option>
+                <option value="FAT">FAT</option>
               </select>
               <button
                 type="submit"
@@ -213,7 +208,7 @@
             </form>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <div
               class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500"
             >
@@ -257,6 +252,30 @@
                 Biller
               </p>
               <h3 id="stat-biller" class="text-2xl font-black text-orange-600">
+                0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-pink-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                Logistik
+              </p>
+              <h3 id="stat-logistik" class="text-2xl font-black text-pink-600">
+                0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500"
+            >
+              <p
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+              >
+                FAT
+              </p>
+              <h3 id="stat-fat" class="text-2xl font-black text-purple-600">
                 0
               </h3>
             </div>
@@ -334,171 +353,102 @@
             <option value="NOC">NOC</option>
             <option value="TEKNISI">TEKNISI</option>
             <option value="BILLER">BILLER</option>
+            <option value="LOGISTIK">LOGISTIK</option>
+            <option value="FAT">FAT</option>
           </select>
-          <button
-            id="btn-save-edit"
-            class="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 mr-2"
-          >
-            Simpan
-          </button>
-          <button
-            onclick="document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('edit-modal').classList.remove('flex');"
-            class="bg-gray-400 text-white p-2 rounded-md"
-          >
-            Batal
-          </button>
+          <div class="flex justify-end space-x-2">
+            <button
+              onclick="document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('edit-modal').classList.remove('flex');"
+              class="bg-gray-400 text-white p-2 rounded-md px-4"
+            >
+              Batal
+            </button>
+            <button
+              id="btn-save-edit"
+              class="bg-indigo-600 text-white p-2 rounded-md px-4 hover:bg-indigo-700"
+            >
+              Simpan
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase_init.js"></script>
     <script src="js/staf_logic.js"></script>
 
     <script>
-      // Script Tambahan untuk Memastikan Fungsi Global Terbaca
       window.onload = function () {
         if (typeof window.loadStaf === "function") {
-          console.log("Fungsi loadStaf siap digunakan.");
-          window.loadStaf("nama"); // Panggil inisialisasi awal
-        } else {
-          console.error(
-            "Fungsi loadStaf gagal dimuat dari js/staf_logic.js. Periksa path file!"
-          );
+          window.loadStaf("nama");
         }
       };
-    </script>
 
-    <script>
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.querySelector("#menu-toggle");
         const sidebar = document.querySelector("#sidebar");
         const backdrop = document.querySelector("#backdrop");
 
-        // Pastikan modal tertutup jika diklik di luar (optional, tapi bagus)
-        const editModal = document.getElementById("edit-modal");
-        if (editModal) {
-          editModal.addEventListener("click", function (e) {
-            if (e.target === this) {
-              editModal.classList.add("hidden");
-              editModal.classList.remove("flex");
-            }
-          });
-        }
-
-        // Fungsi penutup yang dapat dipanggil kembali
         function closeSidebar() {
           sidebar.classList.add("-translate-x-full");
-
-          // Sembunyikan backdrop
           backdrop.classList.remove("opacity-50");
           backdrop.classList.add("opacity-0", "pointer-events-none");
         }
 
-        // Fungsi pembuka
         function openSidebar() {
           sidebar.classList.remove("-translate-x-full");
-
-          // Tampilkan backdrop
           backdrop.classList.remove("opacity-0", "pointer-events-none");
           backdrop.classList.add("opacity-50");
         }
 
-        if (menuToggle && sidebar && backdrop) {
-          // A. Listener Tombol Hamburger (Toggle)
-          menuToggle.addEventListener("click", function () {
-            const isHidden = sidebar.classList.contains("-translate-x-full");
-
-            if (isHidden) {
-              openSidebar();
-            } else {
-              closeSidebar();
-            }
-          });
-
-          // B. Listener Backdrop (Close)
-          backdrop.addEventListener("click", closeSidebar);
-        } else {
-          console.error(
-            "ERROR: Elemen navigasi (#menu-toggle, #sidebar, atau #backdrop) tidak ditemukan."
-          );
-        }
+        menuToggle.addEventListener("click", () =>
+          sidebar.classList.contains("-translate-x-full")
+            ? openSidebar()
+            : closeSidebar()
+        );
+        backdrop.addEventListener("click", closeSidebar);
       });
-    </script>
-    <script>
-      (function () {
-        // Ambil role dan bersihkan (huruf kecil & tanpa spasi)
-        const rawRole = localStorage.getItem("userRole") || "user";
-        const role = rawRole.trim().toLowerCase();
-        const username = localStorage.getItem("username");
 
-        // 1. CEK LOGIN
+      // Role Check & Logout Logic
+      (function () {
+        const role = (localStorage.getItem("userRole") || "user")
+          .trim()
+          .toLowerCase();
+        const username = localStorage.getItem("username");
         if (!username) {
           window.location.href = "login.html";
           return;
         }
-
-        // 2. PROTEKSI UI: Izinkan jika role adalah "admin" ATAU "administrator"
-        const isAdmin = role === "admin" || role === "administrator";
-
-        if (!isAdmin) {
-          // Sembunyikan semua elemen admin-only jika BUKAN admin
-          const adminElements = document.querySelectorAll(".admin-only");
-          adminElements.forEach((el) => {
-            el.style.setProperty("display", "none", "important");
-          });
-
-          // Proteksi URL jika mencoba akses file admin
-          if (window.location.pathname.includes("kelola_staf.html")) {
-            window.location.href = "index.html";
-          }
-        } else {
-          console.log(
-            "Akses Admin Terverifikasi: Menampilkan fitur rekap dan kelola staf."
-          );
+        if (role !== "admin" && role !== "administrator") {
+          window.location.href = "index.html";
         }
       })();
-    </script>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        // 1. Ambil data Name dan Username dari LocalStorage
-        const name = localStorage.getItem("userName");
-        const username = localStorage.getItem("username");
 
-        // 2. Tampilkan di Header
-        if (name && username) {
-          document.getElementById("user-display-name").textContent = name;
-          // Menampilkan username dengan format @joko
-          document.getElementById(
-            "user-display-username"
-          ).textContent = `@${username.toLowerCase()}`;
-        } else {
-          // Jika session tidak ditemukan, arahkan kembali ke login
-          window.location.href = "login.html";
-        }
-      });
-
-      // 3. Fungsi Logout tetap sama
       window.handleLogout = function () {
         Swal.fire({
-          title: "Logout dari Sistem?",
-          text: "Sesi Anda akan diakhiri.",
+          title: "Logout?",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#ef4444",
-          cancelButtonColor: "#4f46e5",
           confirmButtonText: "Ya, Logout",
-          cancelButtonText: "Batal",
         }).then((result) => {
           if (result.isConfirmed) {
-            if (typeof auth !== "undefined") {
-              auth.signOut();
-            }
             localStorage.clear();
             window.location.href = "login.html";
           }
         });
       };
+
+      const name = localStorage.getItem("userName");
+      const userHeader = localStorage.getItem("username");
+      if (name && userHeader) {
+        document.getElementById("user-display-name").textContent = name;
+        document.getElementById(
+          "user-display-username"
+        ).textContent = `@${userHeader.toLowerCase()}`;
+      }
     </script>
   </body>
 </html>

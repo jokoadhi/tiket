@@ -9,15 +9,16 @@ const editModal = document.getElementById("edit-modal");
 let currentUnsubscribe = null;
 
 /**
- * Mendaftarkan fungsi ke WINDOW agar bisa diakses oleh HTML onclick
+ * Fungsi untuk menghitung statistik staf secara real-time
+ * Ditambahkan kategori: LOGISTIK dan FAT
  */
-
-// Fungsi untuk menghitung statistik staf
 function updateStats(snapshot) {
   let total = 0;
   let noc = 0;
   let teknisi = 0;
   let biller = 0;
+  let logistik = 0;
+  let fat = 0;
 
   snapshot.forEach((doc) => {
     total++;
@@ -25,13 +26,23 @@ function updateStats(snapshot) {
     if (j === "NOC") noc++;
     else if (j === "TEKNISI") teknisi++;
     else if (j === "BILLER") biller++;
+    else if (j === "LOGISTIK") logistik++;
+    else if (j === "FAT") fat++;
   });
 
-  // Update ke UI dengan animasi sederhana (opsional)
-  document.getElementById("stat-total").textContent = total;
-  document.getElementById("stat-noc").textContent = noc;
-  document.getElementById("stat-teknisi").textContent = teknisi;
-  document.getElementById("stat-biller").textContent = biller;
+  // Update ke UI berdasarkan ID yang ada di HTML
+  if (document.getElementById("stat-total"))
+    document.getElementById("stat-total").textContent = total;
+  if (document.getElementById("stat-noc"))
+    document.getElementById("stat-noc").textContent = noc;
+  if (document.getElementById("stat-teknisi"))
+    document.getElementById("stat-teknisi").textContent = teknisi;
+  if (document.getElementById("stat-biller"))
+    document.getElementById("stat-biller").textContent = biller;
+  if (document.getElementById("stat-logistik"))
+    document.getElementById("stat-logistik").textContent = logistik;
+  if (document.getElementById("stat-fat"))
+    document.getElementById("stat-fat").textContent = fat;
 }
 
 // --- READ & SORT ---
@@ -54,9 +65,7 @@ window.loadStaf = function (sortField = "nama") {
 
   currentUnsubscribe = stafCollection.orderBy(sortField).onSnapshot(
     (snapshot) => {
-      // --- 2. Panggil fungsi indikator setiap kali ada perubahan data ---
       updateStats(snapshot);
-
       stafListBody.innerHTML = "";
 
       if (snapshot.empty) {
@@ -142,8 +151,12 @@ window.deleteStaf = async function (stafId, nama) {
   });
 
   if (result.isConfirmed) {
-    await stafCollection.doc(stafId).delete();
-    Swal.fire("Terhapus!", "", "success");
+    try {
+      await stafCollection.doc(stafId).delete();
+      Swal.fire("Terhapus!", "", "success");
+    } catch (error) {
+      Swal.fire("Gagal!", "Tidak bisa menghapus data.", "error");
+    }
   }
 };
 

@@ -147,7 +147,7 @@ async function loadCopiedData() {
       }
     });
 
-    // --- LANGKAH 2: Proses Data "Menerima Tiket" ---
+    // --- LANGKAH 2: Proses Data "Menerima Tiket" (Data Lama di Atas) ---
     let listMenerimaBaru = [];
     const oldDiterima = data.diterima || [];
 
@@ -156,18 +156,21 @@ async function loadCopiedData() {
       const namaTujuan = (item.tujuan_staf || "").toUpperCase();
       const jabatanTujuan = mapJabatan[namaTujuan] || "";
 
-      // A. Jika status CLOSE -> Hapus
+      // A. Jika status CLOSE -> Hapus (abaikan)
       if (status === "CLOSE") return;
 
-      // B. Jika status TF dan tujuannya adalah TEKNISI -> Hapus
-      if (status === "TF" && jabatanTujuan === "TEKNISI") {
-        console.log(
-          `❌ Tiket ${item.tiket_id} dihapus dari Menerima (TF ke Teknisi: ${namaTujuan})`
-        );
-        return;
+      // B. Jika status TF, cek jabatan tujuannya
+      if (status === "TF") {
+        // Jika TF ke selain NOC (Teknisi, Biller, FAT, Logistik) -> Hapus (abaikan)
+        if (jabatanTujuan !== "NOC") {
+          console.log(
+            `❌ Tiket ${item.tiket_id} dihapus (TF ke ${jabatanTujuan}: ${namaTujuan})`
+          );
+          return;
+        }
       }
 
-      // Selain itu, tetap masukkan ke list Menerima dengan reset status
+      // Selain kondisi di atas (misal masih PROGRESS atau TF ke NOC), masukkan ke list baru
       listMenerimaBaru.push({
         tiket_id: item.tiket_id,
         dari_staf: item.dari_staf,
@@ -176,7 +179,7 @@ async function loadCopiedData() {
       });
     });
 
-    // --- LANGKAH 3: Proses Data "Menangani Tiket" ---
+    // --- LANGKAH 3: Proses Data "Menangani Tiket" (Data Operan ke Atas) ---
     const listMenanganiLama = data.ditangani || [];
 
     listMenanganiLama.forEach((item) => {
@@ -187,7 +190,7 @@ async function loadCopiedData() {
       const isTransfer = aksi === "TF" || aksi === "TRANSFER";
 
       if (isTransfer) {
-        // A. Jika jabatan adalah NOC -> Pindah ke Menerima
+        // Cek: Hanya jika jabatan tujuannya adalah NOC, maka pindah ke bagian Menerima
         if (jabatanTujuan === "NOC") {
           listMenerimaBaru.push({
             tiket_id: item.tiket_id,
@@ -196,36 +199,37 @@ async function loadCopiedData() {
             tujuan_staf: null,
           });
           console.log(
-            `✅ ${item.tiket_id} Pindah ke Menerima (Tujuan: ${namaTujuan} adalah NOC)`
+            `✅ ${item.tiket_id} Pindah ke Menerima (Operan ke NOC: ${namaTujuan})`
           );
-        }
-        // B. Jika jabatan adalah TEKNISI -> Hapus
-        else if (jabatanTujuan === "TEKNISI") {
+        } else {
+          // Jika TF ke Teknisi, FAT, Biller, atau Logistik -> Hapus (abaikan)
           console.log(
-            `❌ ${item.tiket_id} Dihilangkan (Tujuan: ${namaTujuan} adalah TEKNISI)`
+            `❌ ${item.tiket_id} Dihilangkan (Transfer keluar ke ${jabatanTujuan})`
           );
         }
       }
     });
 
-    // --- LANGKAH 4: Update UI ---
+    // --- LANGKAH 4: Pasang ke Form & Bersihkan Kontainer ---
     const dataSiapInput = {
       ...data,
       diterima: listMenerimaBaru,
-      ditangani: [], // Menangani selalu dikosongkan
+      ditangani: [], // Selalu kosongkan bagian menangani untuk input baru
     };
 
     if (transferInContainer) transferInContainer.innerHTML = "";
     if (handlingContainer) handlingContainer.innerHTML = "";
 
     fillFormData(dataSiapInput);
+
+    // Hapus data mentah dari session agar tidak ter-load ulang saat refresh
     sessionStorage.removeItem("copiedReportData");
 
     Swal.fire({
       icon: "success",
-      title: "Sinkronisasi Selesai",
-      text: "Tiket ke Teknisi & Close telah dibersihkan otomatis.",
-      timer: 2000,
+      title: "Sinkronisasi Berhasil",
+      text: "Tiket operan ke NOC telah disusun. Tiket ke divisi lain telah dibersihkan.",
+      timer: 2500,
     });
   } catch (e) {
     console.error("Gagal sinkronisasi data:", e);
