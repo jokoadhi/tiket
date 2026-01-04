@@ -6,6 +6,7 @@ const inputStaf = document.getElementById("input-staf");
 const transferInContainer = document.getElementById("transfer-in-container");
 const handlingContainer = document.getElementById("handling-container");
 const laporanForm = document.getElementById("laporan-form");
+const notepadCollection = db.collection("quick_notes");
 
 let stafDataCache = [];
 let isEditMode = false;
@@ -403,20 +404,38 @@ window.addHandlingRow = function (data = {}) {
 };
 
 window.toggleTransferTarget = function (select) {
-  const row = select.closest(".flex-col");
+  const row = select.closest(".flex-col"); // Mengambil container baris
   const target = row.querySelector(".transfer-target");
 
-  row.classList.remove("bg-green-100", "bg-indigo-50");
-  if (select.value === "CLOSE") row.classList.add("bg-green-100");
-  else row.classList.add("bg-indigo-50");
+  // 1. Bersihkan semua class warna latar belakang sebelumnya
+  row.classList.remove(
+    "bg-red-100",
+    "bg-green-100",
+    "bg-yellow-100",
+    "bg-indigo-50"
+  );
 
+  // 2. Logika Perubahan Warna Baris sesuai permintaan baru
+  if (select.value === "CLOSE") {
+    row.classList.add("bg-red-100"); // MERAH
+  } else if (select.value === "PROGRESS") {
+    row.classList.add("bg-green-100"); // HIJAU
+  } else if (select.value === "TF") {
+    row.classList.add("bg-yellow-100"); // KUNING
+  } else {
+    row.classList.add("bg-indigo-50"); // Default
+  }
+
+  // 3. Logika Aktif/Nonaktif Select Tujuan (TF)
   if (select.value === "TF") {
     target.disabled = false;
-    target.classList.replace("bg-gray-200", "bg-white");
+    target.classList.remove("bg-gray-200");
+    target.classList.add("bg-white");
     target.required = true;
   } else {
     target.disabled = true;
-    target.classList.replace("bg-white", "bg-gray-200");
+    target.classList.remove("bg-white");
+    target.classList.add("bg-gray-200");
     target.value = "";
     target.required = false;
   }
@@ -656,3 +675,191 @@ function applyMassEdit(config) {
 }
 
 document.addEventListener("DOMContentLoaded", initForm);
+
+// ===================================================
+// 7. LOGIKA NOTEPAD (QUICK NOTES 2 KOLOM)
+// ===================================================
+
+/**
+ * Menyimpan catatan cepat ke Firestore (Real-time)
+ * Tidak terpengaruh oleh tombol simpan laporan utama
+ */
+window.saveQuickNote = async function () {
+  const tiketInput = document.getElementById("note-tiket-id");
+  const ketInput = document.getElementById("note-keterangan");
+
+  const tiketVal = tiketInput ? tiketInput.value.trim().toUpperCase() : "";
+  const ketVal = ketInput ? ketInput.value.trim() : "";
+  const author = localStorage.getItem("userName") || "Unknown";
+
+  if (!tiketVal || !ketVal) {
+    Swal.fire({
+      icon: "warning",
+      title: "Data Tidak Lengkap",
+      text: "ID Tiket dan Keterangan wajib diisi!",
+      confirmButtonColor: "#f59e0b",
+    });
+    return;
+  }
+
+  try {
+    await notepadCollection.add({
+      tiket_id: tiketVal,
+      keterangan: ketVal,
+      created_by: author,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Reset input dan fokus kembali ke ID Tiket
+    tiketInput.value = "";
+    ketInput.value = "";
+    tiketInput.focus();
+  } catch (error) {
+    console.error("Notepad Save Error:", error);
+    Swal.fire("Gagal", "Catatan gagal terkirim ke server.", "error");
+  }
+};
+
+/**
+ * Mendengarkan perubahan data di Firestore secara Real-time
+ */
+function listenToNotepad() {
+  const tbody = document.getElementById("notepad-body");
+  if (!tbody) return;
+
+  notepadCollection
+    .orderBy("timestamp", "desc")
+    .limit(15)
+    .onSnapshot((snapshot) => {
+      tbody.innerHTML = "";
+
+      if (snapshot.empty) {
+        tbody.innerHTML =
+          '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400 italic">Belum ada log catatan...</td></tr>';
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        // Format: 25 Des, 23:57
+        const dateTime = data.timestamp
+          ? new Date(data.timestamp.toDate())
+              .toLocaleString("id-ID", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .replace(".", ":")
+          : "--:--";
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-amber-50/50 transition-colors";
+        tr.innerHTML = `
+                <td class="px-6 py-3 font-mono text-indigo-600 font-bold">${data.tiket_id}</td>
+                <td class="px-6 py-3 text-gray-700">${data.keterangan}</td>
+                <td class="px-6 py-3 text-gray-400 text-[11px] font-medium tabular-nums">${dateTime}</td>
+                <td class="px-6 py-3 text-center space-x-3">
+                    <button onclick="editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}')" 
+                        class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
+                    <button onclick="deleteQuickNote('${doc.id}')" 
+                        class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
+                </td>
+            `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+/**
+ * Mengedit catatan yang sudah ada di Firestore
+ */
+window.editQuickNote = async function (id, curTiket, curKet) {
+  const { value: formValues } = await Swal.fire({
+    title:
+      '<span class="text-xl font-bold text-gray-800">Update Log Catatan</span>',
+    html: `
+            <div class="text-left mt-4 px-2">
+                <div class="mb-4">
+                    <label class="block text-xs font-extrabold text-indigo-600 uppercase tracking-wider mb-1">ID Tiket</label>
+                    <input id="swal-tiket" class="w-full p-3 border-2 border-gray-100 rounded-lg focus:border-indigo-500 focus:outline-none text-sm font-mono transition-all" 
+                        placeholder="Contoh: TKT12345" value="${curTiket}">
+                </div>
+                <div class="mb-2">
+                    <label class="block text-xs font-extrabold text-indigo-600 uppercase tracking-wider mb-1">Keterangan</label>
+                    <textarea id="swal-ket" class="w-full p-3 border-2 border-gray-100 rounded-lg focus:border-indigo-500 focus:outline-none text-sm transition-all min-h-[100px]" 
+                        placeholder="Tulis detail progress...">${curKet}</textarea>
+                </div>
+            </div>
+        `,
+    showCancelButton: true,
+    confirmButtonText: "Simpan Perubahan",
+    cancelButtonText: "Batal",
+    confirmButtonColor: "#4f46e5", // Indigo 600
+    cancelButtonColor: "#9ca3af", // Gray 400
+    reverseButtons: true,
+    focusConfirm: false,
+    customClass: {
+      popup: "rounded-xl shadow-2xl",
+      confirmButton: "px-6 py-2.5 rounded-lg text-sm font-bold",
+      cancelButton: "px-6 py-2.5 rounded-lg text-sm font-bold",
+    },
+    preConfirm: () => {
+      const t = document
+        .getElementById("swal-tiket")
+        .value.trim()
+        .toUpperCase();
+      const k = document.getElementById("swal-ket").value.trim();
+      if (!t || !k) {
+        Swal.showValidationMessage("Semua kolom wajib diisi!");
+      }
+      return { tiket_id: t, keterangan: k };
+    },
+  });
+
+  if (formValues) {
+    try {
+      await notepadCollection.doc(id).update({
+        ...formValues,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      // Toast notifikasi sukses (opsional)
+      const Toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      Toast.fire({ icon: "success", title: "Catatan diperbarui" });
+    } catch (e) {
+      Swal.fire("Error", "Gagal memperbarui data.", "error");
+    }
+  }
+};
+
+/**
+ * Menghapus catatan dari Firestore
+ */
+window.deleteQuickNote = async function (id) {
+  const result = await Swal.fire({
+    title: "Hapus Log?",
+    text: "Data yang dihapus tidak bisa dikembalikan.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    confirmButtonText: "Ya, Hapus",
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await notepadCollection.doc(id).delete();
+    } catch (e) {
+      Swal.fire("Error", "Gagal menghapus data.", "error");
+    }
+  }
+};
+
+// Pastikan listenToNotepad dipanggil saat halaman siap
+document.addEventListener("DOMContentLoaded", () => {
+  listenToNotepad();
+});

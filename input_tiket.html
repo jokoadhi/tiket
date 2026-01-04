@@ -285,7 +285,7 @@
 
             <div class="mb-8">
               <h3 class="text-xl font-medium text-indigo-700 mb-4">
-                1. Menerima Tiket (Transfer In)
+                1. Menerima Tiket
               </h3>
               <div class="flex gap-2 mb-3">
                 <button
@@ -334,7 +334,7 @@
 
             <div class="mb-8">
               <h3 class="text-xl font-medium text-indigo-700 mb-4">
-                2. Menangani Tiket (Aksi Staf)
+                2. Menangani Tiket
               </h3>
               <div id="handling-container" class="space-y-3"></div>
               <button
@@ -357,6 +357,88 @@
                 </svg>
                 Tambah Tiket Ditangani
               </button>
+            </div>
+
+            <div class="mt-12 mb-8 pt-8 border-t border-dashed border-gray-200">
+              <h3
+                class="text-xl font-medium text-amber-700 mb-4 flex items-center"
+              >
+                <svg
+                  class="w-6 h-6 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  ></path>
+                </svg>
+                Catatan Cepat
+              </h3>
+
+              <div
+                class="bg-amber-50 p-4 rounded-lg mb-4 border border-amber-100 shadow-inner"
+              >
+                <div class="flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    id="note-tiket-id"
+                    placeholder="ID Tiket (Contoh: 12345)"
+                    class="w-full md:w-1/4 p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
+                  />
+                  <input
+                    type="text"
+                    id="note-keterangan"
+                    placeholder="Keterangan / Progress..."
+                    class="flex-grow p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onclick="saveQuickNote()"
+                    class="bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700 transition font-bold shadow-md"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </div>
+
+              <div
+                class="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/4"
+                      >
+                        ID Tiket
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                      >
+                        Keterangan
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-24"
+                      >
+                        Waktu
+                      </th>
+                      <th
+                        class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-32"
+                      >
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="notepad-body"
+                    class="bg-white divide-y divide-gray-200 text-sm"
+                  ></tbody>
+                </table>
+              </div>
             </div>
 
             <div class="mt-10 pt-4 border-t flex gap-4">
