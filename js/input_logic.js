@@ -326,7 +326,10 @@ window.addTransferInRow = function (data = {}) {
 
   div.innerHTML = `
         <div class="w-full md:w-1/4">
-            <input type="text" name="tiket_diterima" placeholder="ID Tiket" required value="${tiket}" class="w-full p-2 border rounded-md text-sm bg-white">
+            <input type="text" name="tiket_diterima" placeholder="ID Tiket" required value="${tiket}" 
+                oninput="this.value = this.value.replace(/\\s+/g, '').toUpperCase()" 
+                onchange="window.checkDuplicateRealTime(this)"
+                class="w-full p-2 border rounded-md text-sm bg-white font-mono transition-all focus:ring-2 focus:ring-indigo-400">
         </div>
         <div class="w-full md:w-1/6">
             <select name="status_terima" onchange="toggleTransferTarget(this)" class="w-full p-2 border rounded-md text-sm bg-white">
@@ -374,7 +377,10 @@ window.addHandlingRow = function (data = {}) {
 
   div.innerHTML = `
         <div class="w-full md:w-1/2">
-            <input type="text" name="tiket_ditangani" placeholder="ID Tiket" required value="${tiket}" class="w-full p-2 border rounded-md text-sm bg-white">
+            <input type="text" name="tiket_ditangani" placeholder="ID Tiket" required value="${tiket}" 
+                oninput="this.value = this.value.replace(/\\s+/g, '').toUpperCase()" 
+                onchange="window.checkDuplicateRealTime(this)"
+                class="w-full p-2 border rounded-md text-sm bg-white font-mono transition-all focus:ring-2 focus:ring-indigo-400">
         </div>
         <div class="w-full md:w-1/6">
             <select name="aksi_handling" onchange="toggleTransferTarget(this)" class="w-full p-2 border rounded-md text-sm bg-white">
@@ -866,3 +872,40 @@ window.deleteQuickNote = async function (id) {
 document.addEventListener("DOMContentLoaded", () => {
   listenToNotepad();
 });
+
+/**
+ * Fungsi Validasi Real-time untuk ID Tiket Ganda
+ */
+let isValidating = false; // Flag untuk mencegah looping notifikasi
+
+window.checkDuplicateRealTime = function (inputElement) {
+  const val = inputElement.value.trim().toUpperCase();
+  if (!val || isValidating) return;
+
+  const allInputs = Array.from(
+    document.querySelectorAll(
+      '[name="tiket_diterima"], [name="tiket_ditangani"]'
+    )
+  );
+  const count = allInputs.filter(
+    (input) => input.value.trim().toUpperCase() === val
+  ).length;
+
+  if (count > 1) {
+    isValidating = true; // Kunci agar tidak muncul lagi saat OK diklik
+
+    Swal.fire({
+      icon: "warning",
+      title: "ID Tiket Duplikat!",
+      text: `ID Tiket [ ${val} ] sudah dimasukkan sebelumnya.`,
+      confirmButtonColor: "#f59e0b",
+      allowOutsideClick: false, // Memaksa klik OK
+    }).then(() => {
+      // Reset nilai agar tidak dianggap duplikat lagi atau biarkan user mengubahnya
+      inputElement.classList.add("border-red-500", "bg-red-50");
+      isValidating = false; // Buka kunci setelah klik OK
+    });
+  } else {
+    inputElement.classList.remove("border-red-500", "bg-red-50");
+  }
+};
