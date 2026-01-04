@@ -741,7 +741,6 @@ function listenToNotepad() {
 
       snapshot.forEach((doc) => {
         const data = doc.data();
-        // Format: 25 Des, 23:57
         const dateTime = data.timestamp
           ? new Date(data.timestamp.toDate())
               .toLocaleString("id-ID", {
@@ -754,18 +753,22 @@ function listenToNotepad() {
           : "--:--";
 
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-amber-50/50 transition-colors";
+
+        // MODIFIKASI DISINI:
+        // Tambahkan 'even:bg-gray-50' untuk warna abu-abu pada baris genap
+        tr.className = "hover:bg-amber-50/50 transition-colors even:bg-gray-50";
+
         tr.innerHTML = `
-                <td class="px-6 py-3 font-mono text-indigo-600 font-bold">${data.tiket_id}</td>
-                <td class="px-6 py-3 text-gray-700">${data.keterangan}</td>
-                <td class="px-6 py-3 text-gray-400 text-[11px] font-medium tabular-nums">${dateTime}</td>
-                <td class="px-6 py-3 text-center space-x-3">
-                    <button onclick="editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}')" 
-                        class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
-                    <button onclick="deleteQuickNote('${doc.id}')" 
-                        class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
-                </td>
-            `;
+        <td class="px-6 py-3 font-mono text-indigo-600 font-bold">${data.tiket_id}</td>
+        <td class="px-6 py-3 text-gray-700">${data.keterangan}</td>
+        <td class="px-6 py-3 text-gray-400 text-[11px] font-medium tabular-nums">${dateTime}</td>
+        <td class="px-6 py-3 text-center space-x-3">
+            <button onclick="editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}')" 
+                class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
+            <button onclick="deleteQuickNote('${doc.id}')" 
+                class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
+        </td>
+    `;
         tbody.appendChild(tr);
       });
     });
