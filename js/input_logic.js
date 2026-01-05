@@ -7,6 +7,7 @@ const transferInContainer = document.getElementById("transfer-in-container");
 const handlingContainer = document.getElementById("handling-container");
 const laporanForm = document.getElementById("laporan-form");
 const notepadCollection = db.collection("quick_notes");
+const chatRef = db.collection("template_chat");
 
 let stafDataCache = [];
 let isEditMode = false;
@@ -104,9 +105,17 @@ async function setupEditMode(docId) {
   const indicator = document.getElementById("edit-indicator");
   const subtitle = document.getElementById("form-subtitle");
 
+  // AMBIL ELEMEN CATATAN CEPAT
+  const quickNoteSection = document.getElementById("quick-note-section");
+
   if (btn) btn.textContent = "Update Laporan (Mode Edit)";
   if (indicator) indicator.classList.remove("hidden");
   if (subtitle) subtitle.textContent = "Edit Laporan Terdaftar";
+
+  // SEMBUNYIKAN CATATAN CEPAT SAAT MODE EDIT AKTIF
+  if (quickNoteSection) {
+    quickNoteSection.style.display = "none";
+  }
 
   try {
     const doc = await laporanRef.doc(docId).get();
@@ -909,3 +918,228 @@ window.checkDuplicateRealTime = function (inputElement) {
     inputElement.classList.remove("border-red-500", "bg-red-50");
   }
 };
+
+// 1. Fungsi Buka Tutup Panel
+window.toggleChatPanel = function () {
+  const panel = document.getElementById("chat-panel");
+  const overlay = document.getElementById("chat-overlay");
+
+  if (!panel || !overlay) {
+    console.error("Elemen chat-panel atau chat-overlay tidak ditemukan");
+    return;
+  }
+  panel.classList.toggle("translate-x-full");
+  overlay.classList.toggle("hidden");
+};
+
+// 2. Fungsi Copy Chat (Daftarkan ke window agar terdeteksi onclick)
+window.copyChat = function (text) {
+  if (!text) return;
+
+  // Gunakan API Clipboard Modern
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showCopySuccess();
+      })
+      .catch((err) => {
+        copyFallback(text);
+      });
+  } else {
+    // Gunakan cara lama jika tidak didukung (HTTP biasa)
+    copyFallback(text);
+  }
+};
+
+// Fungsi Internal untuk Notifikasi Success
+function showCopySuccess() {
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true,
+  });
+  Toast.fire({
+    icon: "success",
+    title: "Teks disalin ke clipboard!",
+  });
+  if (window.innerWidth < 768) window.toggleChatPanel();
+}
+
+// Fungsi Internal untuk Fallback Copy
+function copyFallback(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    document.execCommand("copy");
+    showCopySuccess();
+  } catch (err) {
+    console.error("Fallback copy gagal", err);
+  }
+  document.body.removeChild(textArea);
+}
+
+// 3. Tab Switcher
+window.switchChatTab = function (tab) {
+  const list = document.getElementById("chat-content-list");
+  const admin = document.getElementById("chat-content-admin");
+  const tList = document.getElementById("tab-list");
+  const tAdmin = document.getElementById("tab-admin");
+
+  if (tab === "list") {
+    list.classList.remove("hidden");
+    admin.classList.add("hidden");
+    tList.className =
+      "flex-1 py-3 text-green-600 border-b-2 border-green-600 bg-white";
+    tAdmin.className = "flex-1 py-3 text-gray-500 hover:bg-gray-200";
+  } else {
+    list.classList.add("hidden");
+    admin.classList.remove("hidden");
+    tAdmin.className =
+      "flex-1 py-3 text-green-600 border-b-2 border-green-600 bg-white";
+    tList.className = "flex-1 py-3 text-gray-500 hover:bg-gray-200";
+  }
+};
+
+// 4. CRUD Functions (Daftarkan ke window)
+window.saveChatTemplate = async function () {
+  const id = document.getElementById("chat-id-edit").value;
+  const kategori = document.getElementById("chat-kategori").value;
+  const pesan = document.getElementById("chat-pesan").value.trim();
+
+  if (!pesan) return;
+
+  try {
+    if (id) {
+      await chatRef.doc(id).update({ kategori, pesan });
+    } else {
+      await chatRef.add({
+        kategori,
+        pesan,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    window.resetChatForm();
+    window.switchChatTab("list");
+  } catch (error) {
+    console.error("Error saving chat:", error);
+  }
+};
+
+window.editChat = function (id, kat, pesan) {
+  document.getElementById("chat-id-edit").value = id;
+  document.getElementById("chat-kategori").value = kat;
+  document.getElementById("chat-pesan").value = pesan;
+  document.getElementById("btn-save-chat").innerText = "Update";
+  window.switchChatTab("admin");
+};
+
+window.deleteChat = async function (id) {
+  const res = await Swal.fire({
+    title: "Hapus template?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Hapus",
+  });
+  if (res.isConfirmed) await chatRef.doc(id).delete();
+};
+
+window.resetChatForm = function () {
+  document.getElementById("chat-id-edit").value = "";
+  document.getElementById("chat-pesan").value = "";
+  document.getElementById("btn-save-chat").innerText = "Simpan";
+};
+
+// 5. Listener Firestore
+function initChatListener() {
+  chatRef.orderBy("kategori").onSnapshot((snapshot) => {
+    const listDiv = document.getElementById("render-chat-list");
+    const manageDiv = document.getElementById("render-chat-manage");
+    if (!listDiv || !manageDiv) return;
+
+    listDiv.innerHTML = "";
+    manageDiv.innerHTML = "";
+
+    const groups = {};
+    snapshot.forEach((doc) => {
+      const d = doc.data();
+      if (!groups[d.kategori]) groups[d.kategori] = [];
+      groups[d.kategori].push({ id: doc.id, ...d });
+    });
+
+    for (const kat in groups) {
+      let section = `<p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 border-l-2 border-green-500 pl-2">${kat}</p>`;
+      groups[kat].forEach((item) => {
+        // Render Daftar Copy (Tanpa Tanda Petik)
+        section += `
+    <div onclick="window.copyChat(\`${item.pesan
+      .replace(/`/g, "\\`")
+      .replace(/\n/g, "\\n")}\`)" 
+         class="bg-white p-3 border rounded-lg cursor-pointer hover:border-green-500 shadow-sm group mt-2 transition-all">
+        <p class="text-xs text-gray-600 chat-text-format">${item.pesan}</p>
+        <span class="text-[9px] text-green-500 font-bold hidden group-hover:block mt-1 uppercase">Klik untuk Copy</span>
+    </div>`;
+
+        // Render Manage (Juga tanpa tanda petik pada preview)
+        manageDiv.innerHTML += `
+    <div class="p-2 border rounded bg-gray-50 text-[11px] flex justify-between items-center mb-2 shadow-sm">
+        <span class="truncate w-44 font-medium cursor-help" 
+              title="${item.pesan.replace(/"/g, "&quot;")}">
+            ${item.pesan}
+        </span>
+        <div class="flex space-x-2 shrink-0 ml-2">
+            <button onclick="window.editChat('${item.id}', '${
+          item.kategori
+        }', \`${item.pesan.replace(/`/g, "\\`").replace(/\n/g, "\\n")}\`)" 
+                    class="text-blue-500 hover:text-blue-700 font-bold uppercase transition-colors">
+                Edit
+            </button>
+            <button onclick="window.deleteChat('${item.id}')" 
+                    class="text-red-500 hover:text-red-700 font-bold uppercase transition-colors">
+                Hapus
+            </button>
+        </div>
+    </div>`;
+      });
+      listDiv.innerHTML += section;
+    }
+  });
+}
+
+// Inisialisasi saat halaman siap
+document.addEventListener("DOMContentLoaded", initChatListener);
+
+// ===================================================
+// ANIMASI PENYAMBUTAN TOMBOL CHAT (SETIAP MASUK)
+// ===================================================
+
+function runChatWelcomeAnimation() {
+  // Cari tombol chat berdasarkan selector onclick
+  const chatBtn = document.querySelector('button[onclick="toggleChatPanel()"]');
+
+  if (chatBtn) {
+    // 1. Tambahkan class animasi denyut
+    chatBtn.classList.add("animate-chat-welcome");
+
+    // 2. Hapus animasi otomatis setelah 5 detik
+    const timer = setTimeout(() => {
+      chatBtn.classList.remove("animate-chat-welcome");
+    }, 10000);
+
+    // 3. Jika user klik tombol sebelum 5 detik, langsung matikan animasi
+    chatBtn.addEventListener(
+      "click",
+      () => {
+        clearTimeout(timer);
+        chatBtn.classList.remove("animate-chat-welcome");
+      },
+      { once: true }
+    );
+  }
+}
+
+document.addEventListener("DOMContentLoaded", runChatWelcomeAnimation);
