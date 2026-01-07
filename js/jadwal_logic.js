@@ -1,47 +1,91 @@
 /**
  * js/jadwal_logic.js
- * Sistem Jadwal Terpisah (NOC & Teknisi)
- * Fitur: RBAC (Role-Based Access Control), Card UI, Auto-Color, & Persistence
+ * Fitur: Konfirmasi Simpan, Pilar Hari Ini, & Proteksi Input Bulan (RBAC)
  */
 
 const dbStaf = db.collection("staf");
 const dbJadwal = db.collection("jadwal_staf");
 
 // ==========================================
-// 1. FUNGSI UTILITAS & AKSES
+// 1. STYLE & ANIMASI (Pilar Vertikal)
 // ==========================================
+const styleFix = document.createElement("style");
+styleFix.innerHTML = `
+  @keyframes neon-pillar {
+    0% { border-color: #fbbf24; box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.2); }
+    50% { border-color: #f59e0b; box-shadow: inset 0 0 18px rgba(251, 191, 36, 0.4); }
+    100% { border-color: #fbbf24; box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.2); }
+  }
+  
+  .animate-pillar {
+    animation: neon-pillar 1.5s infinite ease-in-out;
+    border-left: 4px solid #fbbf24 !important;
+    border-right: 4px solid #fbbf24 !important;
+    position: relative;
+    z-index: 5 !important; 
+  }
 
-// Cek apakah user memiliki role admin
+  .sticky-col {
+    position: sticky !important;
+    left: 0;
+    z-index: 40 !important; 
+    background-color: white !important;
+    border-right: 2px solid #e2e8f0 !important;
+  }
+
+  thead th.sticky-col { z-index: 50 !important; }
+  .table-schedule { border-collapse: separate !important; border-spacing: 0 !important; }
+  .animate-pillar { border-bottom: none !important; }
+`;
+document.head.appendChild(styleFix);
+
+// ==========================================
+// 2. FUNGSI UTILITAS & AKSES (RBAC)
+// ==========================================
 function getAdminStatus() {
   const rawRole = localStorage.getItem("userRole") || "user";
-  const role = rawRole.trim().toLowerCase();
-  return role === "admin" || role === "administrator";
+  return (
+    rawRole.trim().toLowerCase() === "admin" ||
+    rawRole.trim().toLowerCase() === "administrator"
+  );
 }
 
-// Mengatur tampilan tombol admin di halaman
 function initAccessControl() {
   const isAdmin = getAdminStatus();
-  const adminElements = document.querySelectorAll(".admin-only");
 
-  adminElements.forEach((el) => {
+  // 1. Kontrol elemen tombol khusus admin
+  document.querySelectorAll(".admin-only").forEach((el) => {
     if (isAdmin) {
       el.classList.remove("hidden");
-      // Jika elemen adalah pembungkus tombol (div), gunakan flex
       if (el.tagName === "DIV") el.style.display = "flex";
     } else {
-      // Sembunyikan paksa jika bukan admin
       el.style.setProperty("display", "none", "important");
     }
   });
+
+  // 2. Kontrol Input Bulan (Proteksi)
+  const inputBulan = document.getElementById("pilih-bulan");
+  if (inputBulan) {
+    if (isAdmin) {
+      inputBulan.disabled = false;
+      inputBulan.classList.remove("bg-gray-50", "cursor-not-allowed");
+    } else {
+      inputBulan.disabled = true;
+      inputBulan.classList.add("bg-gray-50", "cursor-not-allowed");
+      // Opsional: Hilangkan icon panah select pada user biasa agar terlihat statis
+      inputBulan.style.appearance = "none";
+    }
+  }
 }
 
-// Update warna background sel berdasarkan nilai shift
 window.updateCellColor = function (select) {
   const val = select.value;
   const parent = select.parentElement;
+  const isPillar = parent.classList.contains("animate-pillar");
 
-  // Reset class tapi pertahankan layout
-  parent.className = "border-r p-0 transition-all duration-300 cell-container";
+  parent.className =
+    "p-0 transition-all duration-300 cell-container " +
+    (isPillar ? "animate-pillar bg-amber-50/30 " : "border-r border-gray-100 ");
 
   const colors = {
     P: "bg-blue-100 text-blue-700",
@@ -49,14 +93,77 @@ window.updateCellColor = function (select) {
     M: "bg-purple-100 text-purple-700",
     L: "bg-red-100 text-red-700",
   };
-
-  if (colors[val]) {
-    parent.classList.add(...colors[val].split(" "));
-  }
+  if (colors[val]) parent.classList.add(...colors[val].split(" "));
 };
 
 // ==========================================
-// 2. FUNGSI DATABASE (LOAD & SAVE)
+// 3. FUNGSI DATABASE (SAVE & RESET)
+// ==========================================
+
+window.simpanJadwal = function () {
+  const bulan = document.getElementById("pilih-bulan").value;
+  if (!bulan) return Swal.fire("Error", "Pilih bulan terlebih dahulu", "error");
+
+  Swal.fire({
+    title: "Simpan Jadwal?",
+    text: `Konfirmasi publikasi jadwal bulan ${bulan}.`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#4f46e5",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Ya, Simpan!",
+    cancelButtonText: "Batal",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const shifts = {};
+      document.querySelectorAll(".cell-shift").forEach((s) => {
+        if (!shifts[s.dataset.staf]) shifts[s.dataset.staf] = {};
+        shifts[s.dataset.staf][s.dataset.tgl] = s.value;
+      });
+
+      dbJadwal
+        .doc(bulan)
+        .set({
+          shifts,
+          last_updated: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then(() =>
+          Swal.fire("Berhasil", "Jadwal telah diperbarui.", "success")
+        )
+        .catch(() => Swal.fire("Gagal", "Akses ditolak.", "error"));
+    }
+  });
+};
+
+window.resetJadwalLokal = function () {
+  const pilihBulan = document.getElementById("pilih-bulan").value;
+  if (!pilihBulan) return;
+
+  Swal.fire({
+    title: "Hapus Data?",
+    text: "Tindakan ini tidak dapat dibatalkan!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Hapus!",
+    confirmButtonColor: "#ef4444",
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await dbJadwal.doc(pilihBulan).delete();
+        document.querySelectorAll(".cell-shift").forEach((s) => {
+          s.value = "";
+          window.updateCellColor(s);
+        });
+        Swal.fire("Terhapus", "Data berhasil dibersihkan.", "success");
+      } catch (e) {
+        Swal.fire("Error", e.message, "error");
+      }
+    }
+  });
+};
+
+// ==========================================
+// 4. RENDER & LOGIKA TABEL
 // ==========================================
 
 window.loadDataTersimpan = async function (bulan) {
@@ -77,59 +184,27 @@ window.loadDataTersimpan = async function (bulan) {
       });
     }
   } catch (error) {
-    console.error("Gagal memuat data:", error);
+    console.error("Load Error:", error);
   }
 };
 
-window.simpanJadwal = function () {
-  const bulan = document.getElementById("pilih-bulan").value;
-  if (!bulan) return Swal.fire("Error", "Pilih bulan terlebih dahulu", "error");
-
-  const shifts = {};
-  document.querySelectorAll(".cell-shift").forEach((s) => {
-    if (!shifts[s.dataset.staf]) shifts[s.dataset.staf] = {};
-    shifts[s.dataset.staf][s.dataset.tgl] = s.value;
-  });
-
-  dbJadwal
-    .doc(bulan)
-    .set({
-      shifts,
-      last_updated: firebase.firestore.FieldValue.serverTimestamp(),
-    })
-    .then(() =>
-      Swal.fire("Tersimpan", "Jadwal berhasil dipublikasikan.", "success")
-    )
-    .catch((err) =>
-      Swal.fire("Gagal", "Anda tidak memiliki izin akses.", "error")
-    );
-};
-
-// ==========================================
-// 3. FUNGSI RENDER TABEL
-// ==========================================
-
 window.renderTable = async function () {
-  const pilihBulan = document.getElementById("pilih-bulan").value;
-  if (!pilihBulan) return;
-
-  const [tahun, bulan] = pilihBulan.split("-");
+  const inputBulan = document.getElementById("pilih-bulan").value;
+  if (!inputBulan) return;
+  const [tahun, bulan] = inputBulan.split("-");
   const jumlahHari = new Date(tahun, bulan, 0).getDate();
 
-  // Pastikan tombol admin menyesuaikan role setiap kali render
-  initAccessControl();
+  initAccessControl(); // Jalankan proteksi RBAC
 
   try {
     const snapshot = await dbStaf.get();
     const listNoc = [];
     const listTeknisi = [];
-
     snapshot.forEach((doc) => {
       const d = doc.data();
-      const nama = d.nama || "Tanpa Nama";
       const jab = (d.jabatan || "").toUpperCase();
-      if (jab === "NOC") listNoc.push(nama);
-      if (jab === "TEKNISI") listTeknisi.push(nama);
+      if (jab === "NOC") listNoc.push(d.nama);
+      if (jab === "TEKNISI") listTeknisi.push(d.nama);
     });
 
     renderStrukturTabel(listNoc, jumlahHari, "container-tabel-noc", "NOC");
@@ -139,8 +214,7 @@ window.renderTable = async function () {
       "container-tabel-teknisi",
       "Teknisi"
     );
-
-    window.loadDataTersimpan(pilihBulan);
+    window.loadDataTersimpan(inputBulan);
   } catch (error) {
     console.error("Firebase Error:", error);
   }
@@ -152,12 +226,15 @@ function renderStrukturTabel(daftarNama, jumlahHari, containerId, label) {
 
   const isAdmin = getAdminStatus();
   const disabledAttr = isAdmin ? "" : "disabled";
-  const cursorClass = isAdmin ? "cursor-pointer" : "cursor-default opacity-90";
 
-  if (daftarNama.length === 0) {
-    container.innerHTML = `<div class="p-8 text-center text-gray-400 italic bg-white rounded-xl shadow-sm border border-gray-100">Belum ada data staf ${label}.</div>`;
-    return;
-  }
+  const skrg = new Date();
+  const tToday = skrg.getDate();
+  const bToday = skrg.getMonth() + 1;
+  const thToday = skrg.getFullYear();
+  const [thPilih, blPilih] = document
+    .getElementById("pilih-bulan")
+    .value.split("-")
+    .map(Number);
 
   let html = `
     <div class="mb-10 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -166,24 +243,33 @@ function renderStrukturTabel(daftarNama, jumlahHari, containerId, label) {
             <h3 class="font-black text-slate-800 tracking-tight uppercase text-sm">Tabel Jadwal Tim ${label}</h3>
         </div>
         <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="w-full text-sm text-center border-collapse">
+            <table class="table-schedule w-full text-sm text-center">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest">
                     <tr>
-                        <th class="p-4 sticky-col bg-slate-50 z-20 border-r w-40 text-left shadow-[4px_0_10px_rgba(0,0,0,0.03)]">Nama ${label}</th>`;
+                        <th class="p-4 sticky-col w-40 text-left">Nama ${label}</th>`;
 
   for (let i = 1; i <= jumlahHari; i++) {
-    html += `<th class="p-2 border-r min-w-[45px]">${i}</th>`;
+    const isToday = i === tToday && blPilih === bToday && thPilih === thToday;
+    const hClass = isToday
+      ? "bg-indigo-700 text-white animate-pillar shadow-lg"
+      : "border-r border-b border-gray-200";
+    html += `<th class="p-2 min-w-[45px] ${hClass}">${i}</th>`;
   }
 
   html += `</tr></thead><tbody class="divide-y divide-gray-100">`;
 
   daftarNama.forEach((nama) => {
     html += `<tr>
-        <td class="p-3 border-r sticky-col font-bold text-[11px] text-slate-700 bg-white shadow-[4px_0_10px_rgba(0,0,0,0.02)] text-left uppercase">${nama}</td>`;
+        <td class="p-3 sticky-col font-bold text-[11px] text-slate-700 uppercase">${nama}</td>`;
+
     for (let i = 1; i <= jumlahHari; i++) {
-      html += `<td class="border-r p-0 cell-container">
+      const isToday = i === tToday && blPilih === bToday && thPilih === thToday;
+      const bClass = isToday
+        ? "animate-pillar bg-amber-50/30"
+        : "border-r border-gray-100";
+      html += `<td class="p-0 cell-container ${bClass}">
                 <select ${disabledAttr} onchange="window.updateCellColor(this)" 
-                        class="cell-shift w-full h-11 text-center bg-transparent border-none appearance-none ${cursorClass} font-bold text-[11px] transition-all focus:ring-2 focus:ring-indigo-500/20" 
+                        class="cell-shift w-full h-11 text-center bg-transparent border-none appearance-none font-bold text-[11px]" 
                         data-staf="${nama}" data-tgl="${i}">
                     <option value="">-</option>
                     <option value="P">P</option>
@@ -196,120 +282,59 @@ function renderStrukturTabel(daftarNama, jumlahHari, containerId, label) {
     html += `</tr>`;
   });
 
-  html += `</tbody></table></div>`;
-  html += renderLegendaHTML();
-  html += `</div>`;
-
+  html += `</tbody></table></div></div>`;
   container.innerHTML = html;
 }
 
-function renderLegendaHTML() {
-  return `
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 px-1">
-        <div class="flex items-center gap-3 p-2.5 rounded-xl border border-blue-100 bg-blue-50/40">
-            <div class="w-7 h-7 flex items-center justify-center bg-blue-500 text-white rounded-lg shadow-sm font-black text-xs">P</div>
-            <div class="flex flex-col"><span class="text-[10px] font-bold text-blue-600 uppercase">Shift Pagi</span><span class="text-[9px] text-slate-500">08:00 - 16:00</span></div>
-        </div>
-        <div class="flex items-center gap-3 p-2.5 rounded-xl border border-yellow-200 bg-yellow-50/40">
-            <div class="w-7 h-7 flex items-center justify-center bg-yellow-400 text-white rounded-lg shadow-sm font-black text-xs">S</div>
-            <div class="flex flex-col"><span class="text-[10px] font-bold text-yellow-700 uppercase">Shift Sore</span><span class="text-[9px] text-slate-500">15:00 - 23:00</span></div>
-        </div>
-        <div class="flex items-center gap-3 p-2.5 rounded-xl border border-purple-100 bg-purple-50/40">
-            <div class="w-7 h-7 flex items-center justify-center bg-purple-500 text-white rounded-lg shadow-sm font-black text-xs">M</div>
-            <div class="flex flex-col"><span class="text-[10px] font-bold text-purple-600 uppercase">Shift Malam</span><span class="text-[9px] text-slate-500">23:00 - 08:00</span></div>
-        </div>
-        <div class="flex items-center gap-3 p-2.5 rounded-xl border border-red-100 bg-red-50/40">
-            <div class="w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-lg shadow-sm font-black text-xs">L</div>
-            <div class="flex flex-col"><span class="text-[10px] font-bold text-red-600 uppercase">Libur</span><span class="text-[9px] text-slate-500">Off Day</span></div>
-        </div>
-    </div>`;
-}
-
-// ==========================================
-// 4. FUNGSI LOGIKA JADWAL (ADMIN ONLY)
-// ==========================================
-
 window.generatePolaOtomatis = function () {
   const pilihBulan = document.getElementById("pilih-bulan").value;
-  if (!pilihBulan) return Swal.fire("Pilih Bulan", "", "warning");
-
+  if (!pilihBulan) return;
   const [tahun, bulan] = pilihBulan.split("-");
   const jumlahHari = new Date(tahun, bulan, 0).getDate();
-
   ["container-tabel-noc", "container-tabel-teknisi"].forEach((id) => {
     const tableSelects = document.querySelectorAll(`#${id} .cell-shift`);
-    if (tableSelects.length === 0) return;
-
     const stafInTable = [
       ...new Set(Array.from(tableSelects).map((s) => s.dataset.staf)),
     ];
-    const n = stafInTable.length;
-
+    if (stafInTable.length === 0) return;
     let polaInduk =
       id === "container-tabel-teknisi"
         ? ["P", "P", "P", "P", "S", "M", "L", "L"]
         : ["P", "P", "S", "S", "M", "M", "L", "L"];
-
-    const totalLen = polaInduk.length;
-    const jeda = totalLen / n;
-
     stafInTable.forEach((nama, sIdx) => {
       for (let tgl = 1; tgl <= jumlahHari; tgl++) {
         const cell = document.querySelector(
           `#${id} .cell-shift[data-staf="${nama}"][data-tgl="${tgl}"]`
         );
         if (cell) {
-          const idx = Math.floor((tgl - 1 + sIdx * jeda) % totalLen);
+          const idx = Math.floor(
+            (tgl - 1 + sIdx * (polaInduk.length / stafInTable.length)) %
+              polaInduk.length
+          );
           cell.value = polaInduk[idx];
           window.updateCellColor(cell);
         }
       }
     });
   });
-  Swal.fire("Selesai", "Pola rotasi berhasil dibuat secara merata.", "success");
-};
-
-window.resetJadwalLokal = function () {
-  const pilihBulan = document.getElementById("pilih-bulan").value;
-  if (!pilihBulan) return;
-
-  Swal.fire({
-    title: "Hapus Permanen?",
-    text: "Tabel akan dikosongkan dan data di database akan dihapus!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Ya, Reset!",
-    confirmButtonColor: "#ef4444",
-    cancelButtonColor: "#6b7280",
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        await dbJadwal.doc(pilihBulan).delete();
-        document.querySelectorAll(".cell-shift").forEach((s) => {
-          s.value = "";
-          window.updateCellColor(s);
-        });
-        Swal.fire("Berhasil", "Jadwal telah dibersihkan.", "success");
-      } catch (e) {
-        Swal.fire("Error", e.message, "error");
-      }
-    }
-  });
 };
 
 // ==========================================
 // 5. STARTUP
 // ==========================================
-
 document.addEventListener("DOMContentLoaded", () => {
-  // Set default ke bulan sekarang
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
     2,
     "0"
   )}`;
   const inputBulan = document.getElementById("pilih-bulan");
-  if (inputBulan) inputBulan.value = yearMonth;
+
+  if (inputBulan) {
+    inputBulan.value = yearMonth;
+    // Panggil akses kontrol segera agar input langsung terkunci jika user biasa
+    initAccessControl();
+  }
 
   setTimeout(() => {
     window.renderTable();
