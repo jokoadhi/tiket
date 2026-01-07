@@ -11,6 +11,13 @@ const dbJadwal = db.collection("jadwal_staf");
 // ==========================================
 const styleFix = document.createElement("style");
 styleFix.innerHTML = `
+  /* 1. Pastikan Header Utama Halaman memiliki Z-Index tertinggi */
+  /* Ganti selector .header-utama dengan class navbar/header Anda yang sebenarnya */
+  header, .navbar, nav {
+    z-index: 100 !important;
+    position: relative;
+  }
+
   @keyframes neon-pillar {
     0% { border-color: #fbbf24; box-shadow: inset 0 0 8px rgba(251, 191, 36, 0.2); }
     50% { border-color: #f59e0b; box-shadow: inset 0 0 18px rgba(251, 191, 36, 0.4); }
@@ -22,20 +29,32 @@ styleFix.innerHTML = `
     border-left: 4px solid #fbbf24 !important;
     border-right: 4px solid #fbbf24 !important;
     position: relative;
-    z-index: 5 !important; 
+    z-index: 10 !important; /* Pillar di bawah kolom nama */
   }
 
+  /* 2. Atur ulang Z-index Sticky Column agar tidak menabrak Header Atas */
   .sticky-col {
     position: sticky !important;
     left: 0;
-    z-index: 40 !important; 
+    /* Nilai diturunkan agar tetap di atas pilar (10) tapi di bawah navbar (100) */
+    z-index: 30 !important; 
     background-color: white !important;
     border-right: 2px solid #e2e8f0 !important;
   }
 
-  thead th.sticky-col { z-index: 50 !important; }
+  /* Header tabel (Tanggal) harus di bawah Navbar Utama */
+  thead th.sticky-col {
+    z-index: 35 !important;
+  }
+
   .table-schedule { border-collapse: separate !important; border-spacing: 0 !important; }
   .animate-pillar { border-bottom: none !important; }
+  
+  /* Tambahan: Pastikan pembungkus tabel tidak memecah stacking context */
+  .overflow-x-auto {
+    position: relative;
+    z-index: 1;
+  }
 `;
 document.head.appendChild(styleFix);
 
