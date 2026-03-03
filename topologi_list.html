@@ -4,14 +4,9 @@
     <link rel="icon" type="image/png" href="assets/icons/ico.png" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mapping ODP - Report App</title>
+    <title>Topologi Jaringan - Report App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-
     <style>
       .content-area {
         transition: margin-left 0.3s ease-in-out;
@@ -22,45 +17,14 @@
           margin-left: 16rem;
         }
       }
-      #map {
-        height: calc(100vh - 280px);
-        width: 100%;
-        border-radius: 1rem;
-        z-index: 10;
+      .card-topo {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      /* Memperbaiki tampilan modal Swal untuk list kategori */
-      .cat-list-item:hover {
-        background-color: #f3f4f6;
-      }
-
-      /* Styling untuk Label ODP yang muncul terus */
-      .odp-label {
-        background: white;
-        border: 2px solid #4f46e5;
-        border-radius: 6px;
-        color: #1e1b4b;
-        font-weight: 800;
-        font-size: 10px;
-        padding: 2px 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        white-space: nowrap;
-        /* Memastikan teks tepat di tengah */
-        text-align: center;
-      }
-
-      /* Menghilangkan panah bawaan tooltip agar tidak bikin miring */
-      .leaflet-tooltip-top:before,
-      .leaflet-tooltip-bottom:before,
-      .leaflet-tooltip-left:before,
-      .leaflet-tooltip-right:before {
-        display: none !important;
-      }
-
-      /* Menghilangkan border default tooltip leaflet */
-      .leaflet-tooltip {
-        border: none !important;
-        background: transparent !important;
-        box-shadow: none !important;
+      .card-topo:hover {
+        transform: translateY(-5px);
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
       }
     </style>
   </head>
@@ -87,6 +51,7 @@
         </svg>
         <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
       </a>
+
       <div class="px-4">
         <a
           href="index.html"
@@ -99,7 +64,6 @@
           </svg>
           <span>Dashboard</span>
         </a>
-
         <a
           href="input_tiket.html"
           class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
@@ -119,7 +83,6 @@
           </svg>
           <span>Input Laporan</span>
         </a>
-
         <a
           href="jadwal.html"
           class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
@@ -133,10 +96,9 @@
           </svg>
           <span>Jadwal Staf</span>
         </a>
-
         <a
           href="mapping.html"
-          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold text-white mt-1"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
         >
           <svg
             class="w-5 h-5"
@@ -159,10 +121,9 @@
           </svg>
           <span>Mapping ODP</span>
         </a>
-
         <a
           href="topologi_list.html"
-          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold mt-1"
         >
           <svg
             class="w-5 h-5"
@@ -179,7 +140,6 @@
           </svg>
           <span>Topologi Jaringan</span>
         </a>
-
         <a
           href="kelola_staf.html"
           class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
@@ -199,7 +159,6 @@
           </svg>
           <span>Kelola Staf</span>
         </a>
-
         <a
           href="javascript:void(0)"
           onclick="cekAksesKelolaIP()"
@@ -224,7 +183,7 @@
     </nav>
 
     <div class="content-area">
-      <header class="sticky top-0 bg-white shadow-md p-4 mb-4 z-30">
+      <header class="sticky top-0 bg-white shadow-md p-4 mb-8 z-30">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-4">
             <button
@@ -246,16 +205,17 @@
               </svg>
             </button>
             <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
-              Distribusi <span class="text-indigo-600">ODP</span>
+              Dokumentasi <span class="text-indigo-600">Topologi</span>
             </h1>
           </div>
+
           <div
             class="flex items-center space-x-3 border-l pl-4 border-gray-100"
           >
             <div class="text-right hidden sm:block">
               <p
                 id="user-display-name"
-                class="text-sm font-bold text-gray-800 leading-none capitalize"
+                class="text-sm font-bold text-gray-800 leading-none capitalize italic"
               >
                 Loading...
               </p>
@@ -268,7 +228,7 @@
             </div>
             <button
               onclick="handleLogout()"
-              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200 shadow-sm border border-red-100"
+              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition duration-200"
             >
               <svg
                 class="w-5 h-5"
@@ -288,81 +248,90 @@
         </div>
       </header>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          class="bg-white p-6 shadow-xl rounded-2xl border border-gray-100 mb-6"
+          class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
         >
-          <div
-            class="flex flex-col md:flex-row justify-between items-end gap-4"
-          >
-            <div class="w-full md:w-1/3">
-              <label
-                class="block text-xs font-black text-indigo-600 uppercase tracking-widest mb-2"
-                >Pilih Cluster ODP</label
+          <div class="relative flex-1">
+            <span
+              class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-              <select
-                id="select-kategori"
-                onchange="loadMarkersByCategory()"
-                class="w-full p-3 border-2 border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-gray-700 transition-all outline-none"
-              >
-                <option value="">-- Pilih Cluster --</option>
-              </select>
-            </div>
-            <div class="admin-only flex flex-wrap gap-2 w-full md:w-auto">
-              <button
-                onclick="kelolaKategori()"
-                class="flex-1 md:flex-none bg-gray-100 text-gray-700 px-5 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition"
-              >
-                ⚙️ Cluster
-              </button>
-              <button
-                onclick="tambahTitikODP()"
-                class="flex-1 md:flex-none bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow-lg"
-              >
-                + Tambah ODP
-              </button>
-            </div>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </span>
+            <input
+              type="text"
+              id="search-topology"
+              onkeyup="filterTopology()"
+              placeholder="Cari nama instansi..."
+              class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 sm:text-sm shadow-sm"
+            />
           </div>
+          <button
+            onclick="tambahPerusahaan()"
+            class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition-all"
+          >
+            + Tambah Topologi Baru
+          </button>
         </div>
 
         <div
-          class="bg-white p-2 shadow-xl rounded-2xl border border-gray-100 overflow-hidden"
+          id="topology-grid"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
         >
-          <div id="map" class="border-2 border-gray-50 rounded-xl"></div>
+          <div class="col-span-full text-center py-20 text-gray-400 italic">
+            Memuat basis data topologi...
+          </div>
         </div>
       </main>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/firebase_init.js"></script>
-    <script src="js/mapping_logic.js"></script>
 
     <script>
-      // Auth & Sidebar logic tetap sama
+      // 1. Inisialisasi Koleksi
+      const topoCollection = db.collection("topology_maps");
+
+      // 2. Logika Sidebar & Header (Sama persis dengan dashboard kamu)
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.getElementById("menu-toggle");
         const sidebar = document.getElementById("sidebar");
         const backdrop = document.getElementById("backdrop");
-        if (menuToggle)
-          menuToggle.addEventListener("click", () => {
-            sidebar.classList.remove("-translate-x-full");
-            backdrop.classList.replace("opacity-0", "opacity-50");
-            backdrop.classList.remove("pointer-events-none");
-          });
-        if (backdrop)
-          backdrop.addEventListener("click", () => {
-            sidebar.classList.add("-translate-x-full");
-            backdrop.classList.replace("opacity-50", "opacity-0");
-            backdrop.classList.add("pointer-events-none");
-          });
 
+        function closeSidebar() {
+          sidebar.classList.add("-translate-x-full");
+          backdrop.classList.remove("opacity-50");
+          backdrop.classList.add("opacity-0", "pointer-events-none");
+        }
+        function openSidebar() {
+          sidebar.classList.remove("-translate-x-full");
+          backdrop.classList.remove("opacity-0", "pointer-events-none");
+          backdrop.classList.add("opacity-50");
+        }
+        if (menuToggle)
+          menuToggle.addEventListener("click", () =>
+            sidebar.classList.contains("-translate-x-full")
+              ? openSidebar()
+              : closeSidebar(),
+          );
+        if (backdrop) backdrop.addEventListener("click", closeSidebar);
+
+        // User Display
         const name = localStorage.getItem("userName");
         const username = localStorage.getItem("username");
-        const role = (localStorage.getItem("userRole") || "user")
-          .trim()
-          .toLowerCase();
         if (name && username) {
           document.getElementById("user-display-name").textContent = name;
           document.getElementById("user-display-username").textContent =
@@ -371,25 +340,121 @@
           window.location.href = "login.html";
         }
 
-        if (role !== "admin" && role !== "administrator") {
-          document
-            .querySelectorAll(".admin-only")
-            .forEach((el) =>
-              el.style.setProperty("display", "none", "important"),
-            );
-        }
-        initMap();
+        loadTopologyList();
       });
 
+      // 3. Load Data dari Firestore
+      async function loadTopologyList() {
+        const grid = document.getElementById("topology-grid");
+
+        topoCollection.orderBy("updated_at", "desc").onSnapshot((snapshot) => {
+          if (snapshot.empty) {
+            grid.innerHTML = `
+              <div class="col-span-full text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                <p class="text-gray-400 font-medium">Belum ada data topologi tersimpan.</p>
+              </div>`;
+            return;
+          }
+
+          grid.innerHTML = "";
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const date = data.updated_at
+              ? new Date(data.updated_at.toDate()).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "-";
+
+            grid.innerHTML += `
+              <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 card-topo group relative">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <button onclick="hapusTopology('${doc.id}', '${data.company_name}')" class="text-gray-300 hover:text-red-500 transition">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    </button>
+                </div>
+                <h3 class="text-xl font-black text-gray-800 uppercase leading-tight mb-1 truncate">${data.company_name}</h3>
+                <p class="text-xs text-indigo-400 font-bold mb-6 italic">Update: ${date}</p>
+                
+                <div class="flex gap-2">
+                    <a href="topologi_editor.html?id=${doc.id}" target="_blank" class="flex-1 bg-indigo-600 text-white text-center py-3 rounded-xl font-bold text-xs hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
+                        BUKA EDITOR
+                    </a>
+                    <button onclick="editNama('${doc.id}', '${data.company_name}')" class="px-4 bg-gray-100 text-gray-500 py-3 rounded-xl font-bold text-xs hover:bg-gray-200 transition">
+                        RENAME
+                    </button>
+                </div>
+              </div>`;
+          });
+        });
+      }
+
+      // 4. Fungsi Tambah
+      window.tambahPerusahaan = async function () {
+        const { value: name } = await Swal.fire({
+          title: "Perusahaan Baru",
+          input: "text",
+          inputPlaceholder: "Masukkan nama perusahaan...",
+          showCancelButton: true,
+          confirmButtonColor: "#4338ca",
+          customClass: { popup: "rounded-[2rem]" },
+        });
+
+        if (name) {
+          await topoCollection.add({
+            company_name: name,
+            canvas_data: null,
+            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      };
+
+      // 5. Fungsi Update Nama
+      window.editNama = async function (id, oldName) {
+        const { value: newName } = await Swal.fire({
+          title: "Ubah Nama",
+          input: "text",
+          inputValue: oldName,
+          showCancelButton: true,
+          confirmButtonColor: "#4338ca",
+          customClass: { popup: "rounded-[2rem]" },
+        });
+        if (newName && newName !== oldName) {
+          await topoCollection.doc(id).update({
+            company_name: newName,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      };
+
+      // 6. Fungsi Hapus
+      window.hapusTopology = async function (id, name) {
+        const confirm = await Swal.fire({
+          title: "Hapus Data?",
+          text: `Topologi ${name} akan dihapus permanen.`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          customClass: { popup: "rounded-[2rem]" },
+        });
+        if (confirm.isConfirmed) await topoCollection.doc(id).delete();
+      };
+
+      // 7. Logout (Sama dengan dashboard kamu)
       window.handleLogout = function () {
         Swal.fire({
           title: "Logout?",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#ef4444",
-          confirmButtonText: "Ya, Logout",
-        }).then((res) => {
-          if (res.isConfirmed) {
+          confirmButtonText: "Ya, Keluar",
+        }).then((result) => {
+          if (result.isConfirmed) {
             localStorage.clear();
             window.location.href = "login.html";
           }
