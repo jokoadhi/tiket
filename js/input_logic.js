@@ -20,25 +20,39 @@ let isFormDirty = false; // Flag untuk mendeteksi perubahan data
 async function initForm() {
   await loadStafDropdown();
 
-  // Cek apakah mode EDIT (dari URL)
   const urlParams = new URLSearchParams(window.location.search);
   editDocId = urlParams.get("edit");
 
   if (editDocId) {
+    // PRIORITAS 1: Jika mode EDIT, ambil dari Firestore
     setupEditMode(editDocId);
   } else {
-    // Jika bukan edit, cek apakah ada data SALINAN di sessionStorage
-    loadCopiedData();
+    // Ambil pengecekan data salinan dan cache
+    const copiedDataJson = sessionStorage.getItem("copiedReportData");
+    const cachedDataJson = localStorage.getItem("laporan_harian_cache");
 
-    // OTOMATISASI SHIFT:
-    // Jika setelah loadCopiedData (atau form baru) shift masih kosong/default,
-    // maka isi otomatis berdasarkan jam saat ini.
+    if (copiedDataJson) {
+      // PRIORITAS 2: Jika ada data SALINAN dari menu "Salin"
+      await loadCopiedData();
+    } else if (cachedDataJson) {
+      // PRIORITAS 3: Jika ada data di CACHE lokal (ketikan yang tertinggal)
+      loadFormFromCache();
+    } else {
+      // PRIORITAS 4: Jika benar-benar form baru, buat baris kosong
+      if (transferInContainer) transferInContainer.innerHTML = "";
+      if (handlingContainer) handlingContainer.innerHTML = "";
+      addTransferInRow();
+      addHandlingRow();
+    }
+
+    // --- OTOMATISASI DATA DEFAULT ---
+    // Jalankan ini hanya jika field masih kosong setelah proses muat data di atas
+
     const shiftElem = document.getElementById("input-shift");
-    if (shiftElem) {
+    if (shiftElem && !shiftElem.value) {
       shiftElem.value = getAutomaticShift();
     }
 
-    // Opsional: Otomatisasi Tanggal hari ini jika belum terisi
     const tglElem = document.getElementById("input-tanggal");
     if (tglElem && !tglElem.value) {
       const now = new Date();
@@ -61,7 +75,7 @@ async function loadStafDropdown() {
     inputStaf.classList.remove(
       "bg-gray-200",
       "cursor-not-allowed",
-      "opacity-50"
+      "opacity-50",
     );
     inputStaf.classList.add("bg-white");
 
@@ -79,7 +93,7 @@ async function loadStafDropdown() {
 
     localStorage.setItem(
       "staffCache",
-      JSON.stringify(stafDataCache.map((n) => ({ nama: n })))
+      JSON.stringify(stafDataCache.map((n) => ({ nama: n }))),
     );
   } catch (error) {
     console.error("Error memuat staf:", error);
@@ -176,7 +190,7 @@ async function loadCopiedData() {
         // Jika TF ke selain NOC (Teknisi, Biller, FAT, Logistik) -> Hapus (abaikan)
         if (jabatanTujuan !== "NOC") {
           console.log(
-            `❌ Tiket ${item.tiket_id} dihapus (TF ke ${jabatanTujuan}: ${namaTujuan})`
+            `❌ Tiket ${item.tiket_id} dihapus (TF ke ${jabatanTujuan}: ${namaTujuan})`,
           );
           return;
         }
@@ -213,12 +227,12 @@ async function loadCopiedData() {
             tujuan_staf: null,
           });
           console.log(
-            `✅ ${item.tiket_id} Pindah ke Menerima (Operan ke NOC: ${namaTujuan})`
+            `✅ ${item.tiket_id} Pindah ke Menerima (Operan ke NOC: ${namaTujuan})`,
           );
         } else {
           // Jika TF ke Teknisi, FAT, Biller, atau Logistik -> Hapus (abaikan)
           console.log(
-            `❌ ${item.tiket_id} Dihilangkan (Transfer keluar ke ${jabatanTujuan})`
+            `❌ ${item.tiket_id} Dihilangkan (Transfer keluar ke ${jabatanTujuan})`,
           );
         }
       }
@@ -365,7 +379,7 @@ window.addTransferInRow = function (data = {}) {
                 ${generateStafOptions(tujuan)}
             </select>
         </div>
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">
+        <button type="button" onclick="document.getElementById('${rowId}').remove(); saveFormToCache();" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"></path></svg>
         </button>
     `;
@@ -410,7 +424,7 @@ window.addHandlingRow = function (data = {}) {
                 ${generateStafOptions(tujuan)}
             </select>
         </div>
-        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">
+        <button type="button" onclick="document.getElementById('${rowId}').remove(); saveFormToCache();" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"></path></svg>
         </button>
     `;
@@ -427,7 +441,7 @@ window.toggleTransferTarget = function (select) {
     "bg-red-100",
     "bg-green-100",
     "bg-yellow-100",
-    "bg-indigo-50"
+    "bg-indigo-50",
   );
 
   // 2. Logika Perubahan Warna Baris sesuai permintaan baru
@@ -461,14 +475,15 @@ window.toggleTransferTarget = function (select) {
 // ===================================================
 laporanForm.addEventListener("input", () => {
   isFormDirty = true;
+  saveFormToCache();
 });
 
-window.addEventListener("beforeunload", (e) => {
-  if (isFormDirty) {
-    e.preventDefault();
-    e.returnValue = "";
-  }
-});
+// window.addEventListener("beforeunload", (e) => {
+//   if (isFormDirty) {
+//     e.preventDefault();
+//     e.returnValue = "";
+//   }
+// });
 
 // ===================================================
 // 6. SIMPAN / UPDATE KE FIRESTORE
@@ -526,7 +541,11 @@ laporanForm.addEventListener("submit", async (e) => {
   try {
     if (isEditMode && editDocId) {
       await laporanRef.doc(editDocId).update(reportData);
-      isFormDirty = false; // Reset flag dirty
+
+      // --- LOGIKA CACHE & DIRTY FLAG ---
+      isFormDirty = false;
+      if (window.clearFormCache) clearFormCache();
+
       Swal.fire({
         icon: "success",
         title: "Berhasil",
@@ -536,7 +555,11 @@ laporanForm.addEventListener("submit", async (e) => {
       }).then(() => (window.location.href = "index.html"));
     } else {
       await laporanRef.add(reportData);
-      isFormDirty = false; // Reset flag dirty
+
+      // --- LOGIKA CACHE & DIRTY FLAG ---
+      isFormDirty = false;
+      if (window.clearFormCache) clearFormCache();
+
       Swal.fire({
         icon: "success",
         title: "Berhasil",
@@ -552,6 +575,14 @@ laporanForm.addEventListener("submit", async (e) => {
     btn.textContent = "Simpan Laporan";
   }
 });
+
+/**
+ * Pastikan fungsi ini tersedia di scope global/file yang sama
+ */
+function clearFormCache() {
+  localStorage.removeItem("laporan_harian_cache");
+  console.log("Cache form dibersihkan karena data sudah tersimpan.");
+}
 
 // ===================================================
 // LOGIKA UBAH MASSAL (MASS EDIT)
@@ -908,11 +939,11 @@ window.checkDuplicateRealTime = function (inputElement) {
 
   const allInputs = Array.from(
     document.querySelectorAll(
-      '[name="tiket_diterima"], [name="tiket_ditangani"]'
-    )
+      '[name="tiket_diterima"], [name="tiket_ditangani"]',
+    ),
   );
   const count = allInputs.filter(
-    (input) => input.value.trim().toUpperCase() === val
+    (input) => input.value.trim().toUpperCase() === val,
   ).length;
 
   if (count > 1) {
@@ -1108,8 +1139,8 @@ function initChatListener() {
         </span>
         <div class="flex space-x-2 shrink-0 ml-2">
             <button onclick="window.editChat('${item.id}', '${
-          item.kategori
-        }', \`${item.pesan.replace(/`/g, "\\`").replace(/\n/g, "\\n")}\`)" 
+              item.kategori
+            }', \`${item.pesan.replace(/`/g, "\\`").replace(/\n/g, "\\n")}\`)" 
                     class="text-blue-500 hover:text-blue-700 font-bold uppercase transition-colors">
                 Edit
             </button>
@@ -1123,6 +1154,73 @@ function initChatListener() {
       listDiv.innerHTML += section;
     }
   });
+}
+
+// ===================================================
+// CACHE SYSTEM (LOCAL STORAGE)
+// ===================================================
+
+/**
+ * Menyimpan seluruh state form ke localStorage
+ */
+function saveFormToCache() {
+  if (isEditMode) return; // Jangan simpan cache jika sedang mode EDIT agar tidak rancu
+
+  const formData = {
+    staf_pelaksana: inputStaf.value,
+    shift: document.getElementById("input-shift").value,
+    tanggal: document.getElementById("input-tanggal").value,
+    // Ambil data dari baris-baris tiket
+    diterima: Array.from(transferInContainer.children).map((row) => ({
+      tiket_id: row.querySelector('[name="tiket_diterima"]')?.value || "",
+      status: row.querySelector('[name="status_terima"]')?.value || "PROGRESS",
+      dari_staf: row.querySelector('[name="dari_staf"]')?.value || "",
+      tujuan_staf: row.querySelector(".transfer-target")?.value || "",
+    })),
+    ditangani: Array.from(handlingContainer.children).map((row) => ({
+      tiket_id: row.querySelector('[name="tiket_ditangani"]')?.value || "",
+      aksi: row.querySelector('[name="aksi_handling"]')?.value || "PROGRESS",
+      tujuan_staf: row.querySelector(".transfer-target")?.value || "",
+    })),
+  };
+
+  localStorage.setItem("laporan_harian_cache", JSON.stringify(formData));
+}
+
+/**
+ * Memuat data dari localStorage jika tersedia
+ */
+function loadFormFromCache() {
+  const cacheData = localStorage.getItem("laporan_harian_cache");
+  if (!cacheData) return false;
+
+  const data = JSON.parse(cacheData);
+
+  // Isi data header
+  if (data.staf_pelaksana) inputStaf.value = data.staf_pelaksana;
+  if (data.shift) document.getElementById("input-shift").value = data.shift;
+  if (data.tanggal)
+    document.getElementById("input-tanggal").value = data.tanggal;
+
+  // Isi baris tiket
+  if (data.diterima && data.diterima.length > 0) {
+    transferInContainer.innerHTML = "";
+    data.diterima.forEach((item) => addTransferInRow(item));
+  }
+
+  if (data.ditangani && data.ditangani.length > 0) {
+    handlingContainer.innerHTML = "";
+    data.ditangani.forEach((item) => addHandlingRow(item));
+  }
+
+  return true;
+}
+
+/**
+ * Menghapus cache setelah berhasil submit
+ */
+function clearFormCache() {
+  localStorage.removeItem("laporan_harian_cache");
 }
 
 // Inisialisasi saat halaman siap
@@ -1152,7 +1250,7 @@ function runChatWelcomeAnimation() {
         clearTimeout(timer);
         chatBtn.classList.remove("animate-chat-welcome");
       },
-      { once: true }
+      { once: true },
     );
   }
 }

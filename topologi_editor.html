@@ -491,9 +491,22 @@
           150,
           150,
           "note",
-          {},
-          `<div class="note-text" contenteditable="true" spellcheck="false"></div>`,
+          { text: "" }, // Tempat menyimpan teks di memori Drawflow
+          `<div class="note-text" 
+          contenteditable="true" 
+          spellcheck="false" 
+          onkeyup="editor.updateNodeDataFromId(this.closest('.drawflow-node').id.split('-')[1], {text: this.innerText})"></div>`,
         );
+      };
+
+      // Fungsi untuk sinkronisasi teks Note ke data Drawflow
+      window.updateNoteData = (el) => {
+        // Mencari ID node dari elemen induknya
+        const nodeId = el.closest(".drawflow-node").id.replace("node-", "");
+        const text = el.innerText;
+
+        // Update data internal Drawflow agar saat di-export tidak kosong
+        editor.updateNodeDataFromId(nodeId, { text: text });
       };
 
       document.getElementById("line-color").addEventListener("input", (e) => {
@@ -547,6 +560,19 @@
         editor.reroute = true;
         editor.start();
 
+        editor.on("nodeCreated", function (id) {
+          const node = editor.getNodeFromId(id);
+          if (node.name === "note" && node.data.text) {
+            const el = document.querySelector(`#node-${id} .note-text`);
+            if (el) el.innerText = node.data.text;
+          }
+        });
+
+        // Tambahkan di dalam DOMContentLoaded setelah editor.start()
+        editor.on("nodeDataChanged", function (id) {
+          console.log("Data node " + id + " diperbarui");
+        });
+
         // --- LOGIKA LIMIT 10 KABEL ---
         editor.on("connectionCreated", function (connection) {
           const nodeIn = editor.getNodeFromId(connection.input_id);
@@ -597,12 +623,33 @@
         const urlParams = new URLSearchParams(window.location.search);
         const topoId = urlParams.get("id");
         if (!topoId) return;
+
         const doc = await db.collection("topology_maps").doc(topoId).get();
         if (doc.exists) {
           const data = doc.data();
           document.getElementById("company-title").innerText =
             data.company_name || "Topologi Jaringan";
-          if (data.canvas_data) editor.import(JSON.parse(data.canvas_data));
+
+          if (data.canvas_data) {
+            const parsedData = JSON.parse(data.canvas_data);
+            editor.import(parsedData);
+
+            // --- LOGIKA PEMULIHAN TEKS NOTE ---
+            // Kita perlu menunggu sebentar sampai Drawflow selesai menggambar node di layar
+            setTimeout(() => {
+              const nodes = parsedData.drawflow.Home.data;
+              Object.keys(nodes).forEach((id) => {
+                if (nodes[id].name === "note" && nodes[id].data.text) {
+                  const noteElement = document.querySelector(
+                    `#node-${id} .note-text`,
+                  );
+                  if (noteElement) {
+                    noteElement.innerText = nodes[id].data.text;
+                  }
+                }
+              });
+            }, 100); // Delay 100ms agar DOM sudah siap
+          }
         }
       }
     </script>
