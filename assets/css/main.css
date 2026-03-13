@@ -1,0 +1,41 @@
+/* NOC Premium Theme for SweetAlert */
+.noc-premium-popup {
+  border-radius: 24px !important;
+  padding: 2rem !important;
+  font-family: "Inter", sans-serif !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.noc-premium-title {
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  color: #1e293b !important;
+  padding-top: 10px !important;
+}
+
+/* Tombol Sudah (Konfirmasi) */
+.noc-confirm-btn {
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 12px 24px !important;
+  letter-spacing: 0.025em !important;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Tombol Nanti (Cancel) */
+.noc-cancel-btn {
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 12px 24px !important;
+  color: #64748b !important; /* Slate 500 */
+  letter-spacing: 0.025em !important;
+}
+
+/* Efek transisi saat tombol dihover */
+.noc-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3) !important;
+}

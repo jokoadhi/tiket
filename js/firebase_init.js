@@ -53,7 +53,7 @@ window.updateKodeNOC = async function (newCode) {
     Swal.fire(
       "Gagal",
       "Anda tidak memiliki akses untuk mengubah kode.",
-      "error"
+      "error",
     );
   }
 };
@@ -101,3 +101,74 @@ window.cekAksesKelolaIP = async function () {
     }
   }
 };
+
+function checkBackupReminder() {
+  const today = new Date();
+  const date = today.getDate();
+  const todayString = today.toDateString(); // Contoh: "Fri Mar 13 2026"
+
+  // Aktif di tanggal 10 dan 25 (tambahkan tanggal lain untuk testing)
+  if (date === 10 || date === 25) {
+    // Cek apakah sudah pernah klik "SUDAH" hari ini di localStorage
+    const backupStatus = localStorage.getItem("backupDoneDate");
+
+    if (backupStatus !== todayString) {
+      showBackupAlert(date, todayString);
+    }
+  }
+}
+
+function showBackupAlert(tgl, todayString) {
+  Swal.fire({
+    title: `JADWAL BACKUP RUTIN`,
+    icon: "warning",
+    iconColor: "#f59e0b",
+    html: `
+      <div class="text-left mt-4">
+        <p class="text-slate-500 text-xs tracking-widest uppercase font-bold mb-2">Periode: Tanggal ${tgl}</p>
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+          <p class="text-slate-700 font-semibold text-sm mb-3">Daftar Perangkat Wajib Backup:</p>
+          <div class="grid grid-cols-1 gap-2">
+            <div class="flex items-center text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 shadow-sm">
+              <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span> Perangkat OLT (Running Config)
+            </div>
+            <div class="flex items-center text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 shadow-sm">
+              <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span> Perangkat Mikrotik (Binary & Export)
+            </div>
+          </div>
+        </div>
+        <p class="mt-4 text-[11px] text-center text-slate-400">Status: <span class="text-red-400 font-medium">Belum Terverifikasi</span></p>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "SAYA SUDAH BACKUP",
+    cancelButtonText: "NANTI Saja",
+    confirmButtonColor: "#2563eb", // Blue 600
+    cancelButtonColor: "#f1f5f9", // Slate 100
+    reverseButtons: true,
+    allowOutsideClick: false,
+    customClass: {
+      popup: "noc-premium-popup",
+      title: "noc-premium-title",
+      confirmButton: "noc-confirm-btn",
+      cancelButton: "noc-cancel-btn",
+    },
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.setItem("backupDoneDate", todayString);
+      Swal.fire({
+        icon: "success",
+        title: "VERIFIED",
+        text: "Backup tercatat di sistem lokal.",
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: { popup: "rounded-2xl" },
+      });
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", checkBackupReminder);
+
+// Jalankan pengecekan ulang setiap 1 jam tanpa perlu refresh
+setInterval(checkBackupReminder, 3600000);
