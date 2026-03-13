@@ -158,11 +158,12 @@ async function loadCopiedData() {
   }
 
   try {
+    // 1. Hapus cache lama agar tidak terjadi tabrakan data
+    localStorage.removeItem("laporan_harian_cache");
+
     const data = JSON.parse(copiedDataJson);
-    // Ambil nama staf pelaksana dari laporan yang disalin untuk mengisi kolom "Dari Staf"
     const stafLaporanLama = data.staf_pelaksana;
 
-    // --- LANGKAH 1: Ambil Referensi Jabatan Staf dari Firestore ---
     const stafSnapshot = await db.collection("staf").get();
     const mapJabatan = {};
 
@@ -173,7 +174,6 @@ async function loadCopiedData() {
       }
     });
 
-    // --- LANGKAH 2: Proses Data "Menerima Tiket" (Data Lama di Atas) ---
     let listMenerimaBaru = [];
     const oldDiterima = data.diterima || [];
 
@@ -182,22 +182,12 @@ async function loadCopiedData() {
       const namaTujuan = (item.tujuan_staf || "").toUpperCase();
       const jabatanTujuan = mapJabatan[namaTujuan] || "";
 
-      // A. Jika status CLOSE -> Hapus (abaikan)
       if (status === "CLOSE") return;
 
-      // B. Jika status TF, cek jabatan tujuannya
       if (status === "TF") {
-        // Jika TF ke selain NOC (Teknisi, Biller, FAT, Logistik) -> Hapus (abaikan)
-        if (jabatanTujuan !== "NOC") {
-          console.log(
-            `❌ Tiket ${item.tiket_id} dihapus (TF ke ${jabatanTujuan}: ${namaTujuan})`,
-          );
-          return;
-        }
+        if (jabatanTujuan !== "NOC") return;
       }
 
-      // Selain kondisi di atas (misal masih PROGRESS atau TF ke NOC), masukkan ke list baru
-      // Kolom 'dari_staf' otomatis diisi dengan nama staf dari laporan yang disalin
       listMenerimaBaru.push({
         tiket_id: item.tiket_id,
         dari_staf: stafLaporanLama,
@@ -206,7 +196,6 @@ async function loadCopiedData() {
       });
     });
 
-    // --- LANGKAH 3: Proses Data "Menangani Tiket" (Data Operan ke Atas) ---
     const listMenanganiLama = data.ditangani || [];
 
     listMenanganiLama.forEach((item) => {
@@ -217,40 +206,34 @@ async function loadCopiedData() {
       const isTransfer = aksi === "TF" || aksi === "TRANSFER";
 
       if (isTransfer) {
-        // Cek: Hanya jika jabatan tujuannya adalah NOC, maka pindah ke bagian Menerima
         if (jabatanTujuan === "NOC") {
           listMenerimaBaru.push({
             tiket_id: item.tiket_id,
-            // Tiket ini operan dari staf sebelumnya, maka 'dari_staf' adalah pemilik laporan tersebut
             dari_staf: stafLaporanLama,
             status: "PROGRESS",
             tujuan_staf: null,
           });
-          console.log(
-            `✅ ${item.tiket_id} Pindah ke Menerima (Operan ke NOC: ${namaTujuan})`,
-          );
-        } else {
-          // Jika TF ke Teknisi, FAT, Biller, atau Logistik -> Hapus (abaikan)
-          console.log(
-            `❌ ${item.tiket_id} Dihilangkan (Transfer keluar ke ${jabatanTujuan})`,
-          );
         }
       }
     });
 
-    // --- LANGKAH 4: Pasang ke Form & Bersihkan Kontainer ---
     const dataSiapInput = {
       ...data,
       diterima: listMenerimaBaru,
-      ditangani: [], // Selalu kosongkan bagian menangani untuk input baru
+      ditangani: [],
     };
 
     if (transferInContainer) transferInContainer.innerHTML = "";
     if (handlingContainer) handlingContainer.innerHTML = "";
 
+    // 2. Isi form dengan data yang sudah diproses
     fillFormData(dataSiapInput);
 
-    // Hapus data mentah dari session agar tidak ter-load ulang saat refresh
+    // 3. SEGERA SIMPAN KE CACHE agar tidak hilang saat pindah halaman
+    if (typeof saveFormToCache === "function") {
+      saveFormToCache();
+    }
+
     sessionStorage.removeItem("copiedReportData");
 
     Swal.fire({
