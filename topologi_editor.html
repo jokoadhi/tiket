@@ -3,655 +3,811 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Editor Topologi - Report App</title>
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    />
-
+    <title>FiberMaxs Topology Editor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.css"
+      type="text/css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.7/joint.css"
     />
-    <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
     <style>
-      :root {
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --bg-main: #f8fafc;
-        --text-dark: #1e293b;
-        --dfLineColor: #4f46e5;
-      }
-
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: var(--bg-main);
-        color: var(--text-dark);
-      }
-
-      /* --- CANVAS STYLE --- */
-      #drawflow {
+      #paper-container {
         width: 100%;
-        height: calc(100vh - 80px);
-        background-color: var(--bg-main);
+        height: 100%;
+        overflow: hidden;
+        background-color: #f8fafc;
         background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-        background-size: 30px 30px;
-      }
-
-      /* --- SVG KABEL --- */
-      #drawflow svg {
-        z-index: 10 !important;
-        position: absolute;
-        overflow: visible !important;
-      }
-
-      /* --- NODE HARDWARE --- */
-      .drawflow-node {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 10px !important;
-        width: 110px !important;
-        min-height: 80px !important;
-        padding: 8px !important;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05) !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 5 !important;
-      }
-
-      /* Matikan interaksi bodi agar tidak mengganggu klik titik biru */
-      .drawflow-node .drawflow_content_node {
-        pointer-events: none !important;
-        user-select: none;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-
-      /* --- RESET KONTAINER TITIK (SOLUSI TITIK MENUMPUK) --- */
-      .drawflow-node .inputs,
-      .drawflow-node .outputs {
-        position: absolute !important;
-        width: 100% !important;
-        height: 100% !important;
-        top: 0 !important;
-        left: 0 !important;
-        display: block !important; /* Mematikan flexbox default Drawflow */
-        pointer-events: none !important;
-        z-index: 100 !important;
-      }
-
-      /* --- GAYA TITIK BULAT --- */
-      .drawflow-node .input,
-      .drawflow-node .output {
-        position: absolute !important;
-        width: 14px !important;
-        height: 14px !important;
-        background: var(--primary) !important;
-        border: 2px solid #ffffff !important;
-        pointer-events: all !important;
-        z-index: 200 !important;
-        border-radius: 50% !important;
-        cursor: crosshair;
-        box-sizing: border-box !important;
-        margin: 0 !important; /* Reset margin default */
-      }
-
-      /* --- POSISI PRESISI 4 SISI --- */
-
-      /* 1. INPUT: TEPAT TENGAH ATAS */
-      .drawflow-node .input {
-        top: 0 !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-      }
-
-      /* 2. OUTPUT 1: TEPAT TENGAH KIRI */
-      .drawflow-node .outputs .output:nth-child(1) {
-        top: 50% !important;
-        left: 0 !important;
-        transform: translate(-50%, -50%) !important;
-      }
-
-      /* 3. OUTPUT 2: TEPAT TENGAH KANAN */
-      .drawflow-node .outputs .output:nth-child(2) {
-        top: 50% !important;
-        left: 100% !important;
-        transform: translate(-50%, -50%) !important;
-      }
-
-      /* 4. OUTPUT 3: TEPAT TENGAH BAWAH */
-      .drawflow-node .outputs .output:nth-child(3) {
-        top: 100% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-      }
-
-      /* STYLE KABEL */
-      .drawflow .connection .main-path {
-        stroke: var(--dfLineColor) !important;
-        stroke-width: 3px !important;
-      }
-
-      /* --- SIDEBAR & UI --- */
-      .sidebar-label {
-        display: block;
-        font-size: 10px;
-        font-weight: 800;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        margin-bottom: 1.25rem;
-        padding-left: 8px;
-        border-left: 3px solid var(--primary);
-      }
-
-      .device-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 12px;
-        background: #ffffff;
-        border: 1px solid #f1f5f9;
-        border-radius: 10px;
+        background-size: 20px 20px;
         cursor: grab;
-        transition: all 0.2s ease;
-        margin-bottom: 8px;
+      }
+      #paper-container:active {
+        cursor: grabbing;
       }
 
-      .device-item:hover {
-        border-color: var(--primary);
-        background-color: #f8faff;
-        transform: translateX(4px);
+      #paper-container.delete-mode-active {
+        cursor:
+          url("https://cdn-icons-png.flaticon.com/24/3096/3096673.png") 12 12,
+          auto !important;
+      }
+      #paper-container.delete-mode-active .joint-element {
+        cursor: pointer !important;
       }
 
-      .device-item .icon-box {
-        width: 32px;
-        height: 32px;
-        background: #f1f5f9;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
+      .joint-paper {
+        border: none !important;
       }
-
-      .device-item span.text {
-        font-size: 11px;
-        font-weight: 700;
-        color: #475569;
-        text-transform: uppercase;
+      aside::-webkit-scrollbar {
+        width: 4px;
       }
-
-      /* NOTE STYLE - FINAL CENTERED VERSION */
-      .drawflow-node.note {
-        background: transparent !important;
-        border: 1px solid transparent !important;
-        box-shadow: none !important;
-        transition: border 0.2s ease;
-        min-width: 140px !important;
-        min-height: 80px !important;
-        /* Tambahkan ini agar kontainer induk menengahkan kontennya */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+      aside::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
       }
-
-      .drawflow-node.note:focus-within {
-        border: 1px dashed #cbd5e1 !important;
-      }
-
-      .drawflow-node.note .drawflow_content_node {
-        pointer-events: all !important;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .drawflow-node.note .inputs,
-      .drawflow-node.note .outputs {
-        display: none !important;
-      }
-
-      .note-text {
-        font-size: 14px;
-        font-style: italic;
-        color: #4b5563;
-        padding: 10px;
-        outline: none;
-        cursor: text !important;
-        /* KUNCI CENTER: Membuat teks rata tengah dan fleksibel */
-        text-align: center;
-        width: 100%;
-        display: inline-block;
-        word-wrap: break-word;
-      }
-
-      .note-text:empty:before {
-        content: "Tulis catatan...";
-        color: #cbd5e1;
+      .swal2-popup {
+        font-size: 0.85rem !important;
+        font-family: sans-serif !important;
+        border-radius: 1rem !important;
       }
     </style>
   </head>
-  <body class="overflow-hidden">
+  <body
+    class="h-screen flex flex-col overflow-hidden bg-slate-100 font-sans text-sm text-slate-900"
+  >
     <header
-      class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-50 relative shadow-sm"
+      class="bg-slate-900 text-white p-3 shadow-lg flex justify-between items-center z-10"
     >
-      <div class="flex items-center space-x-6">
-        <a
-          href="topologi_list.html"
-          class="p-2.5 hover:bg-slate-50 rounded-xl text-slate-400 border border-slate-100 transition-all"
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+        <h1 class="font-bold tracking-tight text-base">
+          Topology <span class="text-blue-400 text-xs">TOPOLOGY</span>
+        </h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span
+          id="zoom-status"
+          class="text-xs text-slate-400 bg-slate-800 px-3 py-1.5 rounded-md"
+          >Zoom: 100%</span
+        >
+
+        <button
+          id="btn-delete-mode"
+          onclick="toggleDeleteMode()"
+          class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md transition duration-150 border border-slate-600"
+        >
+          Mode Hapus: <span id="status-delete" class="font-bold">OFF</span>
+        </button>
+
+        <button
+          onclick="exportToImage()"
+          class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md transition duration-150 flex items-center gap-1"
         >
           <svg
-            class="w-5 h-5"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            ></path>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-        </a>
-        <div>
-          <h1
-            id="company-title"
-            class="text-xl font-bold text-slate-800 tracking-tight uppercase"
-          >
-            Memuat...
-          </h1>
-          <div class="flex items-center gap-2">
-            <span
-              class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
-            ></span>
-            <p
-              class="text-[10px] text-slate-400 font-bold tracking-widest uppercase"
-            >
-              Live Editor
-            </p>
-          </div>
-        </div>
-      </div>
+          Export PNG
+        </button>
 
-      <div class="flex items-center space-x-4">
-        <button
-          onclick="addManualNote()"
-          class="flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-lg font-bold text-xs border border-amber-100 hover:bg-amber-100 transition-all"
-        >
-          <span>📝</span> NOTE
-        </button>
-        <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
-        <div
-          class="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 h-[38px]"
-        >
-          <span class="text-[9px] font-bold mr-3 text-slate-400 uppercase"
-            >Kabel</span
-          >
-          <input
-            type="color"
-            id="line-color"
-            value="#4f46e5"
-            class="w-5 h-5 border-none bg-transparent cursor-pointer"
-          />
-        </div>
-        <button
-          onclick="exportPNG()"
-          class="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 transition-all shadow-sm"
-        >
-          📥 PNG
-        </button>
+        <!-- Tambahkan ini di dalam header, dekat tombol Export PNG -->
         <button
           onclick="saveTopology()"
-          class="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold text-xs hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+          class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-md transition duration-150 flex items-center gap-1 shadow-md"
         >
-          💾 SIMPAN
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+            />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Simpan ke Cloud
+        </button>
+
+        <button
+          onclick="clearAll()"
+          class="text-xs bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white px-3 py-1.5 rounded-md transition duration-150"
+        >
+          Hapus Semua
         </button>
       </div>
     </header>
 
-    <div class="flex">
+    <div class="flex flex-1 overflow-hidden">
       <aside
-        class="w-64 bg-white border-r border-slate-200 h-screen p-5 flex flex-col overflow-y-auto pb-32"
+        class="w-72 bg-white border-r border-slate-200 p-4 flex flex-col gap-4 shadow-inner overflow-y-auto"
       >
-        <span class="sidebar-label">Hardware List</span>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="router"
-          class="device-item group"
+        <p
+          class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"
         >
-          <div class="icon-box"><i class="bi bi-router"></i></div>
-          <span class="text">Router</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="switch"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-hdd-network"></i></div>
-          <span class="text">Switch</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="olt"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-diagram-3"></i></div>
-          <span class="text">OLT</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="ap"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-broadcast-pin"></i></div>
-          <span class="text">Access Point</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="htb"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-arrow-left-right"></i></div>
-          <span class="text">Media Conv</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="server"
-          class="device-item group"
-        >
-          <div class="icon-box">
-            <i class="bi bi-pc-display-horizontal"></i>
-          </div>
-          <span class="text">Server</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="pc"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-laptop"></i></div>
-          <span class="text">Client PC</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="nvr"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-camera-video"></i></div>
-          <span class="text">NVR / DVR</span>
-        </div>
-        <div
-          draggable="true"
-          ondragstart="drag(event)"
-          data-node="cloud"
-          class="device-item group"
-        >
-          <div class="icon-box"><i class="bi bi-cloud-check"></i></div>
-          <span class="text">Internet</span>
+          Network Devices
+        </p>
+        <div class="grid grid-cols-1 gap-2">
+          <button
+            onclick="addDevice('Router', '#3b82f6')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left group"
+          >
+            <div class="text-blue-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">Router</p>
+              <p class="text-[10px] text-slate-500 mt-1">Core Network</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('OLT', '#10b981')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition text-left group"
+          >
+            <div class="text-emerald-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                <line x1="6" y1="6" x2="6.01" y2="6" />
+                <line x1="6" y1="18" x2="6.01" y2="18" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">OLT</p>
+              <p class="text-[10px] text-slate-500 mt-1">EPON / GPON</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('Server', '#6366f1')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-left group"
+          >
+            <div class="text-indigo-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="2" width="20" height="20" rx="2" ry="2" />
+                <line x1="2" y1="9" x2="22" y2="9" />
+                <line x1="2" y1="15" x2="22" y2="15" />
+                <circle cx="7" cy="5.5" r=".5" />
+                <circle cx="7" cy="12" r=".5" />
+                <circle cx="7" cy="18.5" r=".5" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">Server</p>
+              <p class="text-[10px] text-slate-500 mt-1">Billing / Web</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('Switch', '#f59e0b')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-amber-500 hover:bg-amber-50 transition text-left group"
+          >
+            <div class="text-amber-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <path d="M6 12h.01" />
+                <path d="M10 12h.01" />
+                <path d="M14 12h.01" />
+                <path d="M18 12h.01" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">Switch</p>
+              <p class="text-[10px] text-slate-500 mt-1">HUB / Distribution</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('AP', '#06b6d4')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition text-left group"
+          >
+            <div class="text-cyan-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M5 12s2.545-5 7-5 7 5 7 5" />
+                <path d="M7.5 15s1.59-3 4.5-3 4.5 3 4.5 3" />
+                <path d="M10 18s.727-1.5 2-1.5 2 1.5 2 1.5" />
+                <circle cx="12" cy="12" r="1" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">
+                Access Point
+              </p>
+              <p class="text-[10px] text-slate-500 mt-1">Wireless AP</p>
+            </div>
+          </button>
+
+          <p
+            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2"
+          >
+            End Devices & CCTV
+          </p>
+          <button
+            onclick="addDevice('PC', '#334155')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-500 hover:bg-slate-100 transition text-left group"
+          >
+            <div class="text-slate-700 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">
+                PC Desktop
+              </p>
+              <p class="text-[10px] text-slate-500 mt-1">End User</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('Client', '#8b5cf6')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group"
+          >
+            <div class="text-purple-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">Pelanggan</p>
+              <p class="text-[10px] text-slate-500 mt-1">Customer ONU</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('CCTV', '#ef4444')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-red-500 hover:bg-red-50 transition text-left group"
+          >
+            <div class="text-red-500 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z"
+                />
+                <rect x="3" y="6" width="12" height="12" rx="2" ry="2" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">CCTV</p>
+              <p class="text-[10px] text-slate-500 mt-1">IP Camera</p>
+            </div>
+          </button>
+          <button
+            onclick="addDevice('NVR', '#475569')"
+            class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-600 hover:bg-slate-100 transition text-left group"
+          >
+            <div class="text-slate-600 group-hover:scale-110 transition">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
+                <circle cx="17" cy="12" r="1" />
+                <line x1="2" y1="12" x2="14" y2="12" />
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700 leading-none">NVR / DVR</p>
+              <p class="text-[10px] text-slate-500 mt-1">Recording Storage</p>
+            </div>
+          </button>
         </div>
       </aside>
 
-      <main
-        class="flex-1 relative"
-        ondrop="drop(event)"
-        ondragover="allowDrop(event)"
-      >
-        <div id="drawflow"></div>
+      <main class="flex-1 relative overflow-hidden">
+        <div id="paper-container"></div>
       </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.1/backbone-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.7/joint.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="js/firebase_init.js"></script>
 
     <script>
-      let editor;
-      const idContainer = document.getElementById("drawflow");
+      const namespace = joint.shapes;
+      const graph = new joint.dia.Graph({}, { namespace });
+      const container = document.getElementById("paper-container");
 
-      window.allowDrop = (ev) => ev.preventDefault();
-
-      window.drag = (ev) => {
-        const nodeType = ev.target
-          .closest("[data-node]")
-          .getAttribute("data-node");
-        ev.dataTransfer.setData("node", nodeType);
-      };
-
-      window.drop = (ev) => {
-        ev.preventDefault();
-        const nodeType = ev.dataTransfer.getData("node");
-        const templates = {
-          router: { icon: "bi bi-router", title: "Router" },
-          switch: { icon: "bi bi-hdd-network", title: "Switch" },
-          olt: { icon: "bi bi-diagram-3", title: "OLT" },
-          ap: { icon: "bi bi-broadcast-pin", title: "Access Point" },
-          htb: { icon: "bi bi-arrow-left-right", title: "Media Conv" },
-          server: { icon: "bi bi-pc-display-horizontal", title: "Server" },
-          pc: { icon: "bi bi-laptop", title: "Client PC" },
-          nvr: { icon: "bi bi-camera-video", title: "NVR / DVR" },
-          cloud: { icon: "bi bi-cloud-check", title: "Internet" },
-        };
-
-        const template = templates[nodeType];
-        if (template) {
-          const rect = idContainer.getBoundingClientRect();
-          let x = (ev.clientX - rect.left) / editor.zoom;
-          let y = (ev.clientY - rect.top) / editor.zoom;
-
-          // MENYESUAIKAN JUMLAH PORT: 1 Input (Atas), 3 Output (Lainnya)
-          editor.addNode(
-            nodeType,
-            1,
-            3,
-            x - 55,
-            y - 40,
-            nodeType,
-            {},
-            `<div class="flex flex-col items-center justify-center p-1">
-                <i class="${template.icon} text-2xl text-indigo-600 mb-1"></i>
-                <div class="text-[9px] font-bold text-center uppercase text-slate-500 leading-tight">${template.title}</div>
-            </div>`,
-          );
-        }
-      };
-
-      window.addManualNote = () => {
-        editor.addNode(
-          "note",
-          0,
-          0,
-          150,
-          150,
-          "note",
-          { text: "" }, // Tempat menyimpan teks di memori Drawflow
-          `<div class="note-text" 
-          contenteditable="true" 
-          spellcheck="false" 
-          onkeyup="editor.updateNodeDataFromId(this.closest('.drawflow-node').id.split('-')[1], {text: this.innerText})"></div>`,
-        );
-      };
-
-      // Fungsi untuk sinkronisasi teks Note ke data Drawflow
-      window.updateNoteData = (el) => {
-        // Mencari ID node dari elemen induknya
-        const nodeId = el.closest(".drawflow-node").id.replace("node-", "");
-        const text = el.innerText;
-
-        // Update data internal Drawflow agar saat di-export tidak kosong
-        editor.updateNodeDataFromId(nodeId, { text: text });
-      };
-
-      document.getElementById("line-color").addEventListener("input", (e) => {
-        document.documentElement.style.setProperty(
-          "--dfLineColor",
-          e.target.value,
-        );
+      const paper = new joint.dia.Paper({
+        el: container,
+        model: graph,
+        width: "100%",
+        height: "100%",
+        gridSize: 10,
+        drawGrid: { name: "dot", color: "#cbd5e1" },
+        background: { color: "#f8fafc" },
+        interactive: { linkLabels: true, vertexAdd: false },
+        defaultLink: new joint.shapes.standard.Link({
+          attrs: { line: { stroke: "#64748b", strokeWidth: 2 } },
+        }),
+        snapLinks: { radius: 50 },
+        linkPinning: false,
+        cellViewNamespace: namespace,
       });
 
-      window.exportPNG = () => {
-        const canvas = document.getElementById("drawflow");
-        const originalBG = canvas.style.backgroundImage;
-        canvas.style.backgroundImage = "none";
-        html2canvas(canvas, { backgroundColor: "#f8fafc", scale: 2 }).then(
-          (c) => {
-            const link = document.createElement("a");
-            link.download = `Topologi_${document.getElementById("company-title").innerText}.png`;
-            link.href = c.toDataURL();
-            link.click();
-            canvas.style.backgroundImage = originalBG;
-          },
-        );
-      };
+      // FUNGSI EXPORT KE GAMBAR (PERBAIKAN)
+      function exportToImage() {
+        // Sembunyikan grid dengan mengubah opacity dot menjadi transparan
+        paper.options.drawGrid.color = "transparent";
+        paper.drawGrid();
 
-      window.saveTopology = async () => {
+        const el = paper.svg;
+
+        Swal.fire({
+          title: "Sedang Memproses...",
+          text: "Menyiapkan gambar topologi Anda",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        htmlToImage
+          .toPng(el)
+          .then(function (dataUrl) {
+            // Kembalikan warna grid ke semula
+            paper.options.drawGrid.color = "#cbd5e1";
+            paper.drawGrid();
+
+            const link = document.createElement("a");
+            link.download =
+              "Topologi-FiberMaxs-" + new Date().getTime() + ".png";
+            link.href = dataUrl;
+            link.click();
+            Swal.fire({
+              icon: "success",
+              title: "Export Berhasil!",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          })
+          .catch(function (error) {
+            paper.options.drawGrid.color = "#cbd5e1";
+            paper.drawGrid();
+            Swal.fire("Gagal!", "Tidak bisa mengekspor gambar.", "error");
+          });
+      }
+
+      // LOGIKA MODE HAPUS
+      let isDeleteMode = false;
+      function toggleDeleteMode() {
+        isDeleteMode = !isDeleteMode;
+        const btn = document.getElementById("btn-delete-mode");
+        const status = document.getElementById("status-delete");
+
+        if (isDeleteMode) {
+          btn.classList.replace("bg-slate-700", "bg-red-600");
+          btn.classList.replace("hover:bg-slate-600", "hover:bg-red-700");
+          status.innerText = "ON";
+          container.classList.add("delete-mode-active");
+        } else {
+          btn.classList.replace("bg-red-600", "bg-slate-700");
+          btn.classList.replace("hover:bg-red-700", "hover:bg-slate-600");
+          status.innerText = "OFF";
+          container.classList.remove("delete-mode-active");
+        }
+      }
+
+      // EVENT KLIK UNTUK HAPUS
+      paper.on("element:pointerclick", function (elementView) {
+        if (isDeleteMode) {
+          const name = elementView.model.attr("label/text");
+          Swal.fire({
+            title: "Hapus Perangkat?",
+            text: `Hapus "${name}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            confirmButtonText: "Ya, Hapus",
+            cancelButtonText: "Batal",
+          }).then((res) => {
+            if (res.isConfirmed) elementView.model.remove();
+          });
+        }
+      });
+
+      // ZOOM & PAN
+      let currentScale = 1;
+      const zoomStatus = document.getElementById("zoom-status");
+      paper.on("blank:mousewheel", (evt, x, y, delta) => {
+        evt.preventDefault();
+        currentScale = Math.min(Math.max(0.5, currentScale + delta * 0.1), 2);
+        paper.scale(currentScale, currentScale, 0, 0);
+        zoomStatus.innerText = "Zoom: " + Math.round(currentScale * 100) + "%";
+      });
+
+      let dragStart;
+      paper.on("blank:pointerdown", (evt) => {
+        if (!isDeleteMode) dragStart = { x: evt.clientX, y: evt.clientY };
+      });
+      $(container)
+        .on("mousemove", (evt) => {
+          if (dragStart) {
+            const cur = paper.translate();
+            paper.translate(
+              cur.tx + (evt.clientX - dragStart.x),
+              cur.ty + (evt.clientY - dragStart.y),
+            );
+            dragStart = { x: evt.clientX, y: evt.clientY };
+          }
+        })
+        .on("mouseup", () => (dragStart = null));
+
+      // ADD DEVICE (4 PORT)
+      function addDevice(label, color) {
+        const rect = new joint.shapes.standard.Rectangle();
+        rect.position(150 + Math.random() * 100, 100 + Math.random() * 100);
+        rect.resize(100, 55);
+        rect.attr({
+          body: {
+            fill: "white",
+            stroke: color,
+            strokeWidth: 2,
+            rx: 8,
+            ry: 8,
+            filter: {
+              name: "dropShadow",
+              args: { dx: 1, dy: 1, blur: 2, opacity: 0.1 },
+            },
+          },
+          label: {
+            text: label,
+            fill: "#1e293b",
+            fontSize: 10,
+            fontWeight: "700",
+            fontFamily: "sans-serif",
+            refX: 0.5,
+            refY: 0.5,
+            textAnchor: "middle",
+            yAlignment: "middle",
+          },
+        });
+
+        rect.prop("ports/groups", {
+          top: {
+            position: "top",
+            attrs: {
+              circle: {
+                fill: color,
+                r: 4.5,
+                magnet: true,
+                stroke: "#fff",
+                strokeWidth: 2,
+              },
+            },
+          },
+          bottom: {
+            position: "bottom",
+            attrs: {
+              circle: {
+                fill: color,
+                r: 4.5,
+                magnet: true,
+                stroke: "#fff",
+                strokeWidth: 2,
+              },
+            },
+          },
+          left: {
+            position: "left",
+            attrs: {
+              circle: {
+                fill: color,
+                r: 4.5,
+                magnet: true,
+                stroke: "#fff",
+                strokeWidth: 2,
+              },
+            },
+          },
+          right: {
+            position: "right",
+            attrs: {
+              circle: {
+                fill: color,
+                r: 4.5,
+                magnet: true,
+                stroke: "#fff",
+                strokeWidth: 2,
+              },
+            },
+          },
+        });
+
+        rect.addPorts([
+          { id: "t", group: "top" },
+          { id: "b", group: "bottom" },
+          { id: "l", group: "left" },
+          { id: "r", group: "right" },
+        ]);
+
+        rect.addTo(graph);
+      }
+
+      graph.on("add", function (cell) {
+        if (cell.isLink()) {
+          cell.appendLabel({
+            attrs: {
+              text: {
+                text: "EDIT DISINI",
+                fill: "#ffffff",
+                fontSize: 9,
+                fontWeight: "bold",
+                pointerEvents: "none",
+              },
+              rect: {
+                fill: "#3b82f6",
+                stroke: "#2563eb",
+                strokeWidth: 1.5,
+                rx: 4,
+                ry: 4,
+                width: 70,
+                height: 18,
+                cursor: "pointer",
+              },
+            },
+          });
+          const tools = new joint.dia.ToolsView({
+            tools: [
+              new joint.linkTools.Vertices(),
+              new joint.linkTools.Remove({
+                distance: 15,
+                action: function (evt, linkView) {
+                  Swal.fire({
+                    title: "Hapus kabel?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3b82f6",
+                    confirmButtonText: "Ya, Hapus",
+                  }).then((res) => {
+                    if (res.isConfirmed) linkView.model.remove();
+                  });
+                },
+              }),
+            ],
+          });
+          cell.findView(paper).addTools(tools).hideTools();
+        }
+      });
+
+      paper.on("link:pointerdblclick", function (linkView) {
+        const currentText = linkView.model.label(0).attrs.text.text;
+        const newText = prompt("Masukkan Label Baru:", currentText);
+        if (newText)
+          linkView.model.label(0, { attrs: { text: { text: newText } } });
+      });
+
+      paper.on("link:mouseenter", (lv) => lv.showTools());
+      paper.on("link:mouseleave", (lv) => lv.hideTools());
+
+      paper.on("element:pointerdblclick", function (ev) {
+        if (isDeleteMode) return;
+        const n = prompt("Nama Perangkat:", ev.model.attr("label/text"));
+        if (n) ev.model.attr("label/text", n);
+      });
+
+      // --- LOGIKA FIREBASE ---
+
+      // Fungsi Simpan ke Firestore
+      async function saveTopology() {
         const urlParams = new URLSearchParams(window.location.search);
         const topoId = urlParams.get("id");
-        if (!topoId) return;
+
+        if (!topoId) {
+          Swal.fire(
+            "ID Tidak Ditemukan",
+            "Pastikan membuka editor melalui list topologi.",
+            "error",
+          );
+          return;
+        }
+
         try {
-          await db
-            .collection("topology_maps")
-            .doc(topoId)
-            .update({
-              canvas_data: JSON.stringify(editor.export()),
-              updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-            });
+          // JointJS sangat mudah di-export ke JSON string
+          const canvasData = JSON.stringify(graph.toJSON());
+
+          await db.collection("topology_maps").doc(topoId).update({
+            canvas_data: canvasData,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+
           Swal.fire({
             icon: "success",
             title: "Tersimpan!",
-            timer: 800,
+            text: "Topologi berhasil diperbarui di database.",
+            timer: 1000,
             showConfirmButton: false,
           });
         } catch (e) {
-          Swal.fire("Gagal", e.message, "error");
+          console.error("Save Error:", e);
+          Swal.fire("Gagal", "Gagal menyimpan: " + e.message, "error");
         }
-      };
-
-      document.addEventListener("DOMContentLoaded", async () => {
-        editor = new Drawflow(idContainer);
-        editor.curvature = 0.5;
-        editor.reroute = true;
-        editor.start();
-
-        editor.on("nodeCreated", function (id) {
-          const node = editor.getNodeFromId(id);
-          if (node.name === "note" && node.data.text) {
-            const el = document.querySelector(`#node-${id} .note-text`);
-            if (el) el.innerText = node.data.text;
-          }
-        });
-
-        // Tambahkan di dalam DOMContentLoaded setelah editor.start()
-        editor.on("nodeDataChanged", function (id) {
-          console.log("Data node " + id + " diperbarui");
-        });
-
-        // --- LOGIKA LIMIT 10 KABEL ---
-        editor.on("connectionCreated", function (connection) {
-          const nodeIn = editor.getNodeFromId(connection.input_id);
-          const nodeOut = editor.getNodeFromId(connection.output_id);
-
-          // Cek jumlah kabel di input tujuan
-          const inputName = connection.input_class;
-          const countIn = nodeIn.inputs[inputName].connections.length;
-
-          // Cek jumlah kabel di output asal
-          const outputName = connection.output_class;
-          const countOut = nodeOut.outputs[outputName].connections.length;
-
-          if (countIn > 10 || countOut > 10) {
-            editor.removeSingleConnection(
-              connection.output_id,
-              connection.input_id,
-              outputName,
-              inputName,
-            );
-            Swal.fire({
-              toast: true,
-              position: "top-end",
-              icon: "warning",
-              title: "Limit 10 kabel tercapai!",
-              showConfirmButton: false,
-              timer: 1500,
-            });
-          }
-        });
-
-        await loadData();
-
-        // Debugging UX
-        editor.on("connectionCancel", () => {
-          Swal.fire({
-            toast: true,
-            position: "bottom-end",
-            icon: "info",
-            title: "Tarik ke titik biru di ATAS perangkat tujuan",
-            showConfirmButton: false,
-            timer: 1500,
-          });
-        });
-      });
+      }
 
       async function loadData() {
         const urlParams = new URLSearchParams(window.location.search);
         const topoId = urlParams.get("id");
         if (!topoId) return;
 
-        const doc = await db.collection("topology_maps").doc(topoId).get();
-        if (doc.exists) {
-          const data = doc.data();
-          document.getElementById("company-title").innerText =
-            data.company_name || "Topologi Jaringan";
+        try {
+          const doc = await db.collection("topology_maps").doc(topoId).get();
+          if (doc.exists) {
+            const data = doc.data();
 
-          if (data.canvas_data) {
-            const parsedData = JSON.parse(data.canvas_data);
-            editor.import(parsedData);
+            // Set judul jika ada
+            if (data.company_name) {
+              // Gunakan ID yang spesifik agar tidak merusak elemen h1 lain jika ada
+              const titleEl =
+                document.getElementById("company-title") ||
+                document.querySelector("h1");
+              titleEl.innerHTML = `Topology <span class="text-blue-400 text-xs">${data.company_name.toUpperCase()}</span>`;
+            }
 
-            // --- LOGIKA PEMULIHAN TEKS NOTE ---
-            // Kita perlu menunggu sebentar sampai Drawflow selesai menggambar node di layar
-            setTimeout(() => {
-              const nodes = parsedData.drawflow.Home.data;
-              Object.keys(nodes).forEach((id) => {
-                if (nodes[id].name === "note" && nodes[id].data.text) {
-                  const noteElement = document.querySelector(
-                    `#node-${id} .note-text`,
-                  );
-                  if (noteElement) {
-                    noteElement.innerText = nodes[id].data.text;
-                  }
-                }
-              });
-            }, 100); // Delay 100ms agar DOM sudah siap
+            // Import data ke graph JointJS
+            if (data.canvas_data) {
+              const parsedData = JSON.parse(data.canvas_data);
+
+              // --- VALIDASI FORMAT DATA ---
+              // Jika data memiliki properti 'cells', berarti itu format JointJS
+              if (parsedData && parsedData.cells) {
+                graph.fromJSON(parsedData);
+              }
+              // Jika data memiliki properti 'drawflow', itu data lama (abaikan/reset)
+              else if (parsedData && parsedData.drawflow) {
+                console.warn(
+                  "Data Drawflow lama terdeteksi. Silakan buat topologi baru dan klik Simpan.",
+                );
+                // Opsional: tampilkan toast pemberitahuan
+                Swal.fire({
+                  toast: true,
+                  position: "top-end",
+                  icon: "info",
+                  title: "Data format lama direset",
+                  showConfirmButton: false,
+                  timer: 3000,
+                });
+                // Jangan panggil graph.fromJSON agar tidak error
+              }
+            }
           }
+        } catch (e) {
+          console.error("Load Error:", e);
         }
       }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        await loadData();
+
+        // Jika setelah load data graph masih kosong, tambahkan router default
+        if (graph.getCells().length === 0) {
+          addDevice("Router", "#3b82f6");
+        }
+      });
+
+      function clearAll() {
+        Swal.fire({
+          title: "Reset?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          confirmButtonText: "Ya, Bersihkan",
+        }).then((res) => {
+          if (res.isConfirmed) graph.clear();
+        });
+      }
+
+      addDevice("Router", "#3b82f6");
     </script>
   </body>
 </html>

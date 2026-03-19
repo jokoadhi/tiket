@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Topologi - FiberMaxs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.7/joint.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+      #paper-container {
+        width: 100vw;
+        height: calc(100vh - 64px);
+        overflow: hidden;
+        background-color: #f8fafc;
+        background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+        background-size: 20px 20px;
+        cursor: grab;
+      }
+      #paper-container:active {
+        cursor: grabbing;
+      }
+      .joint-paper {
+        border: none !important;
+      }
+    </style>
+  </head>
+  <body class="h-screen flex flex-col overflow-hidden bg-slate-100">
+    <!-- HEADER VIEW MODE -->
+    <header
+      class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-50 shadow-sm"
+    >
+      <div class="flex items-center gap-4">
+        <a
+          href="topologi_list.html"
+          class="p-2 hover:bg-slate-50 rounded-lg text-slate-500 border border-slate-100 transition-all"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            ></path>
+          </svg>
+        </a>
+        <div>
+          <h1
+            id="company-title"
+            class="text-lg font-bold text-slate-800 uppercase tracking-tight"
+          >
+            Memuat Topologi...
+          </h1>
+          <p
+            class="text-[10px] text-emerald-500 font-bold tracking-widest uppercase flex items-center gap-1"
+          >
+            <span
+              class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
+            ></span>
+            Mode Preview
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span
+          id="zoom-status"
+          class="text-xs font-mono text-slate-400 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100"
+          >100%</span
+        >
+        <button
+          onclick="exportToImage()"
+          class="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 transition-all flex items-center gap-2"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          DOWNLOAD PNG
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 relative">
+      <div id="paper-container"></div>
+    </main>
+
+    <!-- DEPENDENCIES -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.1/backbone-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.7/joint.js"></script>
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+
+    <script>
+      const namespace = joint.shapes;
+      const graph = new joint.dia.Graph({}, { namespace });
+      const container = document.getElementById("paper-container");
+
+      // INISIALISASI PAPER (MODE READ-ONLY)
+      const paper = new joint.dia.Paper({
+        el: container,
+        model: graph,
+        width: "100%",
+        height: "100%",
+        gridSize: 1,
+        interactive: false, // MATIKAN EDITING
+        cellViewNamespace: namespace,
+        background: { color: "#f8fafc" },
+        defaultLink: new joint.shapes.standard.Link({
+          attrs: { line: { stroke: "#64748b", strokeWidth: 2 } },
+        }),
+      });
+
+      // ZOOM & PAN LOGIC (Tetap diaktifkan agar user bisa navigasi)
+      let currentScale = 1;
+      paper.on("blank:mousewheel", (evt, x, y, delta) => {
+        evt.preventDefault();
+        currentScale = Math.min(Math.max(0.2, currentScale + delta * 0.1), 3);
+        paper.scale(currentScale, currentScale, 0, 0);
+        document.getElementById("zoom-status").innerText =
+          Math.round(currentScale * 100) + "%";
+      });
+
+      let dragStart;
+      paper.on("blank:pointerdown", (evt) => {
+        dragStart = { x: evt.clientX, y: evt.clientY };
+      });
+      $(container)
+        .on("mousemove", (evt) => {
+          if (dragStart) {
+            const cur = paper.translate();
+            paper.translate(
+              cur.tx + (evt.clientX - dragStart.x),
+              cur.ty + (evt.clientY - dragStart.y),
+            );
+            dragStart = { x: evt.clientX, y: evt.clientY };
+          }
+        })
+        .on("mouseup", () => (dragStart = null));
+
+      // LOAD DATA DARI FIREBASE
+      async function loadData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const topoId = urlParams.get("id");
+        if (!topoId) return;
+
+        try {
+          const doc = await db.collection("topology_maps").doc(topoId).get();
+          if (doc.exists) {
+            const data = doc.data();
+            document.getElementById("company-title").innerText =
+              data.company_name || "TOPOLOGI";
+
+            if (data.canvas_data) {
+              const parsedData = JSON.parse(data.canvas_data);
+              graph.fromJSON(parsedData);
+
+              // Auto-center topologi agar berada di tengah layar
+              setTimeout(() => {
+                const contentBBox = paper.getContentBBox();
+                paper.translate(
+                  paper.el.clientWidth / 2 -
+                    contentBBox.width / 2 -
+                    contentBBox.x,
+                  paper.el.clientHeight / 2 -
+                    contentBBox.height / 2 -
+                    contentBBox.y,
+                );
+              }, 100);
+            }
+          }
+        } catch (e) {
+          console.error("Load Error:", e);
+          Swal.fire("Gagal", "Tidak dapat memuat data", "error");
+        }
+      }
+
+      // EXPORT PNG (MENGGUNAKAN HTML-TO-IMAGE)
+      function exportToImage() {
+        // Sembunyikan grid jika ada
+        if (paper.options.drawGrid) {
+          paper.options.drawGrid.color = "transparent";
+          paper.drawGrid();
+        }
+
+        const el = paper.svg;
+
+        Swal.fire({
+          title: "Sedang Memproses...",
+          text: "Menyiapkan gambar topologi Anda",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        htmlToImage
+          .toPng(el, {
+            // "Jamu" agar tidak error SecurityError/CORS
+            skipFonts: true,
+            cacheBust: true,
+            filter: (node) => {
+              // Jangan biarkan library mencoba membaca file CSS dari CDN luar
+              if (
+                node.tagName === "LINK" &&
+                node.rel === "stylesheet" &&
+                node.href.includes("cdnjs")
+              ) {
+                return false;
+              }
+              return true;
+            },
+          })
+          .then(function (dataUrl) {
+            // Kembalikan warna grid
+            if (paper.options.drawGrid) {
+              paper.options.drawGrid.color = "#cbd5e1";
+              paper.drawGrid();
+            }
+
+            const link = document.createElement("a");
+            link.download =
+              "Topologi-FiberMaxs-" + new Date().getTime() + ".png";
+            link.href = dataUrl;
+            link.click();
+
+            Swal.fire({
+              icon: "success",
+              title: "Export Berhasil!",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          })
+          .catch(function (error) {
+            if (paper.options.drawGrid) {
+              paper.options.drawGrid.color = "#cbd5e1";
+              paper.drawGrid();
+            }
+            console.error("Export Error:", error);
+            Swal.fire(
+              "Gagal!",
+              "Tidak bisa mengekspor gambar. Pastikan koneksi stabil.",
+              "error",
+            );
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", loadData);
+    </script>
+  </body>
+</html>

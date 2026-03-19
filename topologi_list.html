@@ -369,27 +369,39 @@
               : "-";
 
             grid.innerHTML += `
-              <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 card-topo group relative">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    </div>
-                    <button onclick="hapusTopology('${doc.id}', '${data.company_name}')" class="text-gray-300 hover:text-red-500 transition">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                    </button>
-                </div>
-                <h3 class="text-xl font-black text-gray-800 uppercase leading-tight mb-1 truncate">${data.company_name}</h3>
-                <p class="text-xs text-indigo-400 font-bold mb-6 italic">Update: ${date}</p>
-                
-                <div class="flex gap-2">
-                    <a href="topologi_editor.html?id=${doc.id}" target="_blank" class="flex-1 bg-indigo-600 text-white text-center py-3 rounded-xl font-bold text-xs hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
-                        BUKA EDITOR
-                    </a>
-                    <button onclick="editNama('${doc.id}', '${data.company_name}')" class="px-4 bg-gray-100 text-gray-500 py-3 rounded-xl font-bold text-xs hover:bg-gray-200 transition">
-                        RENAME
-                    </button>
-                </div>
-              </div>`;
+  <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 card-topo group relative flex flex-col justify-between">
+    <div>
+        <div class="flex items-start justify-between mb-4">
+            <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+            <button onclick="hapusTopology('${doc.id}', '${data.company_name}')" class="text-gray-300 hover:text-red-500 transition">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+            </button>
+        </div>
+        <h3 class="text-xl font-black text-gray-800 uppercase leading-tight mb-1 truncate">${data.company_name}</h3>
+        <p class="text-xs text-indigo-400 font-bold mb-6 italic">Update: ${date}</p>
+    </div>
+    
+    <div class="space-y-2">
+        <!-- TOMBOL UTAMA: VIEW -->
+        <a href="topologi_view.html?id=${doc.id}" target="_blank" class="flex items-center justify-center gap-2 w-full bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            VIEW TOPOLOGI
+        </a>
+
+        <div class="flex gap-2">
+            <a href="topologi_editor.html?id=${doc.id}" target="_blank" class="flex-1 bg-indigo-600 text-white text-center py-3 rounded-xl font-bold text-[10px] hover:bg-indigo-700 transition">
+                BUKA EDITOR
+            </a>
+            <button onclick="editNama('${doc.id}', '${data.company_name}')" class="px-4 bg-gray-100 text-gray-500 py-3 rounded-xl font-bold text-[10px] hover:bg-gray-200 transition">
+                RENAME
+            </button>
+        </div>
+    </div>
+  </div>`;
           });
         });
       }
