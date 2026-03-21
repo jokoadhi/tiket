@@ -826,8 +826,8 @@ function copySingleNote(button) {
     const waktu = cols[2].innerText.trim();
 
     // Logika TKT2 spasi
-    if (idTiket.includes("TKT2")) {
-        idTiket = idTiket.replace("TKT2", "TKT2 ");
+    if (idTiket.includes("TKT")) {
+        idTiket = idTiket.replace("TKT", "TKT ");
     }
 
     let textToCopy = "📋 MAINTENANCE TEKNISI\n";
