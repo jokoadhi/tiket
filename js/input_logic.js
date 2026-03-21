@@ -790,20 +790,65 @@ function listenToNotepad() {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-amber-50/50 transition-colors even:bg-gray-50";
 
-        // PERBAIKAN: Tambahkan type="button" dan passing 'event' pada onclick
         tr.innerHTML = `
         <td class="px-6 py-3 font-mono text-indigo-600 font-bold">${data.tiket_id}</td>
         <td class="px-6 py-3 text-gray-700">${data.keterangan}</td>
         <td class="px-6 py-3 text-gray-400 text-[11px] font-medium tabular-nums">${dateTime}</td>
-        <td class="px-6 py-3 text-center space-x-3">
-            <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
-                class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
-            <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
-                class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
+        <td class="px-6 py-3 text-center">
+            <div class="flex items-center justify-center space-x-3">
+                <button type="button" onclick="copySingleNote(this)" 
+                    class="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-bold text-xs uppercase" title="Salin Tiket Ini">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                    </svg>
+                    Salin
+                </button>
+
+                <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
+                    class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
+                
+                <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
+                    class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
+            </div>
         </td>
     `;
         tbody.appendChild(tr);
       });
+    });
+}
+
+function copySingleNote(button) {
+    const row = button.closest('tr');
+    const cols = row.querySelectorAll('td');
+    
+    let idTiket = cols[0].innerText.trim();
+    const keterangan = cols[1].innerText.trim();
+    const waktu = cols[2].innerText.trim();
+
+    // Logika TKT2 spasi
+    if (idTiket.includes("TKT2")) {
+        idTiket = idTiket.replace("TKT2", "TKT2 ");
+    }
+
+    let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+    textToCopy += "==========================\n";
+    textToCopy += `Waktu    : ${waktu}\n`;
+    textToCopy += `ID Tiket : ${idTiket}\n`;
+    textToCopy += `Status   : ${keterangan}\n`;
+    textToCopy += "==========================";
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // Feedback visual pada tombol yang diklik
+        const originalHTML = button.innerHTML;
+        button.innerHTML = "✅ Tersalin";
+        button.classList.replace('text-blue-600', 'text-green-600');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.replace('text-green-600', 'text-blue-600');
+        }, 1500);
+    }).catch(err => {
+        console.error("Gagal salin:", err);
     });
 }
 
