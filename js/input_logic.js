@@ -807,6 +807,55 @@ function listenToNotepad() {
     });
 }
 
+function copyAllNotes() {
+    const tableBody = document.getElementById('notepad-body');
+    const rows = tableBody.querySelectorAll('tr');
+    
+    if (rows.length === 0) {
+        alert("Belum ada catatan yang bisa disalin.");
+        return;
+    }
+
+    // Perubahan Judul sesuai permintaan
+    let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+    textToCopy += "==========================\n\n";
+
+    rows.forEach((row, index) => {
+        const cols = row.querySelectorAll('td');
+        if (cols.length >= 3) {
+            let idTiket = cols[0].innerText.trim();
+            const keterangan = cols[1].innerText.trim();
+            const waktu = cols[2].innerText.trim();
+
+            // Menambahkan spasi setelah TKT2 secara otomatis
+            if (idTiket.includes("TKT")) {
+                idTiket = idTiket.replace("TKT", "TKT ");
+            }
+
+            textToCopy += `${index + 1}. [${waktu}]\n`;
+            textToCopy += `   ID Tiket : ${idTiket}\n`;
+            textToCopy += `   Status   : ${keterangan}\n`;
+            textToCopy += `--------------------------\n`;
+        }
+    });
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const copyBtn = document.getElementById('copy-btn');
+        const originalContent = copyBtn.innerHTML;
+        
+        // Efek Feedback
+        copyBtn.innerHTML = "✅ Berhasil!";
+        copyBtn.classList.replace('bg-blue-600', 'bg-green-600');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalContent;
+            copyBtn.classList.replace('bg-green-600', 'bg-blue-600');
+        }, 2000);
+    }).catch(err => {
+        alert("Gagal menyalin teks.");
+    });
+}
+
 /**
  * Mengedit catatan yang sudah ada di Firestore
  */
