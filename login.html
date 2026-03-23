@@ -157,6 +157,46 @@
             localStorage.setItem("userName", userData.name); // Nama asli untuk filter staf_pelaksana
             localStorage.setItem("username", userData.username); // ID login
 
+
+            // Tambahkan parameter actionType dengan default "Access Website"
+async function recordActivity(isLoginAction = false, actionType = "Access Website") {
+    try {
+        const username = localStorage.getItem("username");
+        if (!username) return;
+
+        const alreadyLogged = sessionStorage.getItem("session_logged");
+
+        // Jika ini aksi login, atau aksi logout, atau sesi baru dimulai
+        if (isLoginAction || !alreadyLogged) {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            
+            const logEntry = {
+                username: username,
+                nama: localStorage.getItem("userName") || "Unknown",
+                ip: data.ip,
+                url: isLoginAction ? "Login System" : window.location.pathname.split('/').pop() || "Dashboard",
+                action: actionType, // INI PENTING: Mengirim status (LOGIN_SUCCESS / LOGOUT_ACTION)
+                device: navigator.userAgent,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection("logs").add(logEntry);
+            
+            // Tandai sesi agar tidak double log saat refresh halaman biasa
+            sessionStorage.setItem("session_logged", "true");
+        }
+    } catch (e) {
+        console.warn("Log failed", e);
+    }
+}
+            // --- FITUR BARU: LOG AKTIVITAS LOGIN ---
+            // Memanggil fungsi recordActivity dengan parameter true (Aksi Login)
+            // Pastikan firebase_init.js sudah dimuat di halaman ini
+            if (typeof recordActivity === "function") {
+                await recordActivity(true, "LOGIN_SUCCESS");
+            }
+
             Swal.fire({
               icon: "success",
               title: "Login Berhasil!",
@@ -177,6 +217,25 @@
             message = "Username tidak terdaftar.";
           if (error.code === "auth/wrong-password")
             message = "Password yang Anda masukkan salah.";
+
+            // --- FITUR BARU: LOG LOGIN GAGAL ---
+          try {
+              const res = await fetch('https://api.ipify.org?format=json');
+              const data = await res.json();
+              
+              await firebase.firestore().collection("logs").add({
+                  username: username, // Username yang dicoba dimasukkan
+                  nama: "ACCES DENIED",
+                  ip: data.ip,
+                  url: "Login Page",
+                  action: "FAILED LOGIN ATTEMPT", // Menandai bahwa ini percobaan gagal
+                  device: navigator.userAgent,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+          } catch (logErr) {
+              console.error("Gagal mencatat failed login", logErr);
+          }
+          // -----------------------------------
 
           Swal.fire({
             icon: "error",
