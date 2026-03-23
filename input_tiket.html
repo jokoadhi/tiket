@@ -86,6 +86,20 @@
         word-break: break-word; /* Mencegah teks keluar batas */
         line-height: 1.5; /* Agar lebih enak dibaca jika banyak baris */
       }
+
+      .custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* warna slate-300 */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* warna slate-400 */
+}
     </style>
   </head>
   <body class="bg-gray-50">
@@ -495,18 +509,22 @@
     </div>
   </div>
 
-  <div class="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/4">ID Tiket</th>
-          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Keterangan</th>
-          <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-24">Waktu</th>
-          <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="notepad-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
-    </table>
+  <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div class="max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar">
+      <table class="min-w-full divide-y divide-gray-200 border-collapse">
+        <thead class="bg-gray-50 sticky top-0 z-10">
+          <tr class="shadow-sm">
+            <th class="px-2 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-10 bg-gray-50 text-center">No</th>
+            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4 bg-gray-50">ID Tiket</th>
+            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Keterangan</th>
+            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-24 bg-gray-50">Waktu</th>
+            <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider w-32 bg-gray-50">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="notepad-body" class="bg-white divide-y divide-gray-200 text-sm">
+          </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

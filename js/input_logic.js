@@ -764,17 +764,16 @@ function listenToNotepad() {
 
   notepadCollection
     .orderBy("timestamp", "desc")
-    .limit(15)
     .onSnapshot((snapshot) => {
       tbody.innerHTML = "";
 
       if (snapshot.empty) {
         tbody.innerHTML =
-          '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400 italic">Belum ada log catatan...</td></tr>';
+          '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-400 italic text-xs">Belum ada log catatan...</td></tr>';
         return;
       }
 
-      snapshot.forEach((doc) => {
+      snapshot.docs.forEach((doc, index) => {
         const data = doc.data();
         const dateTime = data.timestamp
           ? new Date(data.timestamp.toDate())
@@ -788,30 +787,29 @@ function listenToNotepad() {
           : "--:--";
 
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-amber-50/50 transition-colors even:bg-gray-50";
+        // Padding baris dikurangi (py-1.5) agar lebih rapat
+        tr.className = "hover:bg-amber-50/50 transition-colors even:bg-gray-50/50 border-b border-gray-100";
 
         tr.innerHTML = `
-        <td class="px-6 py-3 font-mono text-indigo-600 font-bold">${data.tiket_id}</td>
-        <td class="px-6 py-3 text-gray-700">${data.keterangan}</td>
-        <td class="px-6 py-3 text-gray-400 text-[11px] font-medium tabular-nums">${dateTime}</td>
-        <td class="px-6 py-3 text-center">
-            <div class="flex items-center justify-center space-x-3">
-                <button type="button" onclick="copySingleNote(this)" 
-                    class="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-bold text-xs uppercase" title="Salin Tiket Ini">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                    </svg>
-                    Salin
-                </button>
-
-                <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
-                    class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase">Edit</button>
-                
-                <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
-                    class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Hapus</button>
-            </div>
-        </td>
-    `;
+    <td class="px-2 py-3 text-center text-gray-400 font-medium text-[11px]">${index + 1}</td>
+    <td class="px-4 py-3 font-mono text-indigo-600 font-bold text-xs tracking-tight">${data.tiket_id}</td>
+    <td class="px-4 py-3 text-gray-700 text-xs leading-relaxed tracking-wide">${data.keterangan}</td>
+    <td class="px-4 py-3 text-gray-400 text-[10px] font-medium tabular-nums">${dateTime}</td>
+    <td class="px-4 py-3 text-center">
+        <div class="flex items-center justify-center space-x-4"> <button type="button" onclick="copySingleNote(this)" 
+                class="text-blue-600 hover:text-blue-800 flex items-center gap-1.5 font-bold text-[10px] uppercase transition-all" title="Salin Tiket Ini">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                </svg>
+                Salin
+            </button>
+            <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
+                class="text-indigo-600 hover:text-indigo-900 font-bold text-[10px] uppercase">Edit</button>
+            <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
+                class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Hapus</button>
+        </div>
+    </td>
+`;
         tbody.appendChild(tr);
       });
     });
@@ -821,9 +819,9 @@ function copySingleNote(button) {
     const row = button.closest('tr');
     const cols = row.querySelectorAll('td');
     
-    let idTiket = cols[0].innerText.trim();
-    const keterangan = cols[1].innerText.trim();
-    const waktu = cols[2].innerText.trim();
+    let idTiket = cols[1].innerText.trim();
+    const keterangan = cols[2].innerText.trim();
+    const waktu = cols[3].innerText.trim();
 
     // Logika TKT2 spasi
     if (idTiket.includes("TKT")) {
@@ -868,9 +866,9 @@ function copyAllNotes() {
     rows.forEach((row, index) => {
         const cols = row.querySelectorAll('td');
         if (cols.length >= 3) {
-            let idTiket = cols[0].innerText.trim();
-            const keterangan = cols[1].innerText.trim();
-            const waktu = cols[2].innerText.trim();
+            let idTiket = cols[1].innerText.trim();
+            const keterangan = cols[2].innerText.trim();
+            const waktu = cols[3].innerText.trim();
 
             // Menambahkan spasi setelah TKT2 secara otomatis
             if (idTiket.includes("TKT")) {
