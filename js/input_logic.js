@@ -579,68 +579,89 @@ window.openMassEditModal = async function () {
   if (typeof Swal === "undefined") return;
 
   const { value: formValues } = await Swal.fire({
-    title: "Ubah Massal Data Tiket",
+    title: "Ubah Massal",
     html: `
-            <div class="text-left space-y-4">
-                <div class="mb-3">
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Target Perubahan:</label>
-                    <select id="swal-target" class="swal2-input !m-0 !w-full !text-sm bg-gray-50">
-                        <option value="terima">Hanya Baris "Menerima Tiket"</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Set "Menerima Dari" Menjadi:</label>
-                    <select id="swal-asal" class="swal2-input !m-0 !w-full !text-sm">
-                        <option value="">-- Jangan Ubah Asal Staf --</option>
-                        ${generateStafOptions("")}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Set Status Menjadi:</label>
-                    <select id="swal-status" class="swal2-input !m-0 !w-full !text-sm">
-                        <option value="">-- Jangan Ubah Status --</option>
-                        <option value="PROGRESS">PROGRESS</option>
-                        <option value="CLOSE">CLOSE</option>
-                        <option value="TF">TF (Transfer)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1 text-gray-700">Set Staf Tujuan (Jika TF):</label>
-                    <select id="swal-staf" class="swal2-input !m-0 !w-full !text-sm" disabled>
-                        <option value="">-- Pilih Staf (Hanya untuk TF) --</option>
-                        ${generateStafOptions("")}
-                    </select>
-                </div>
+      <div class="text-left space-y-4">
+        <div class="p-3 bg-blue-50 rounded-md border border-blue-100">
+          <label class="block text-[10px] font-bold mb-2 text-blue-600 uppercase tracking-wider underline">1. Cari Baris Dengan Kriteria:</label>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] mb-1 text-gray-600">Status Saat Ini:</label>
+              <select id="swal-filter-status" class="swal2-input !m-0 !w-full !text-xs">
+                <option value="ALL">-- Semua Status --</option>
+                <option value="PROGRESS">PROGRESS</option>
+                <option value="TF">TF</option>
+                <option value="CLOSE">CLOSE</option>
+              </select>
             </div>
-        `,
-    didOpen: () => {
-      const statusSelect = document.getElementById("swal-status");
-      const stafSelect = document.getElementById("swal-staf");
+            <div>
+              <label class="block text-[11px] mb-1 text-gray-600">Dari Staf:</label>
+              <select id="swal-filter-asal" class="swal2-input !m-0 !w-full !text-xs">
+                <option value="ALL">-- Semua Staf --</option>
+                ${generateStafOptions("")}
+              </select>
+            </div>
+          </div>
+        </div>
 
+        <div class="p-3 bg-amber-50 rounded-md border border-amber-100">
+          <label class="block text-[10px] font-bold mb-2 text-amber-600 uppercase tracking-wider underline">2. Ubah Menjadi:</label>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] mb-1 text-gray-600">Set "Menerima Dari" Menjadi:</label>
+              <select id="swal-new-asal" class="swal2-input !m-0 !w-full !text-xs">
+                <option value="">-- Jangan Ubah Asal --</option>
+                ${generateStafOptions("")}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] mb-1 text-gray-600">Set Status Menjadi:</label>
+              <select id="swal-new-status" class="swal2-input !m-0 !w-full !text-xs">
+                <option value="">-- Jangan Ubah Status --</option>
+                <option value="PROGRESS">PROGRESS</option>
+                <option value="TF">TF (Transfer)</option>
+                <option value="CLOSE">CLOSE</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] mb-1 text-gray-600">Set Staf Tujuan (Jika TF):</label>
+              <select id="swal-staf-tujuan" class="swal2-input !m-0 !w-full !text-xs bg-gray-100" disabled>
+                <option value="">-- Pilih Staf Tujuan --</option>
+                ${generateStafOptions("")}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    didOpen: () => {
+      const statusSelect = document.getElementById("swal-new-status");
+      const stafTujuanSelect = document.getElementById("swal-staf-tujuan");
+      
       statusSelect.addEventListener("change", () => {
-        if (statusSelect.value === "TF") {
-          stafSelect.disabled = false;
-          stafSelect.classList.remove("bg-gray-100", "cursor-not-allowed");
+        const isTF = statusSelect.value === "TF";
+        stafTujuanSelect.disabled = !isTF;
+        if (isTF) {
+          stafTujuanSelect.classList.remove("bg-gray-100");
         } else {
-          stafSelect.disabled = true;
-          stafSelect.value = "";
-          stafSelect.classList.add("bg-gray-100", "cursor-not-allowed");
+          stafTujuanSelect.value = "";
+          stafTujuanSelect.classList.add("bg-gray-100");
         }
       });
     },
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "Terapkan Perubahan",
-    cancelButtonText: "Batal",
-    confirmButtonColor: "#ec4899",
     preConfirm: () => {
       return {
-        target: document.getElementById("swal-target").value,
-        asal: document.getElementById("swal-asal").value,
-        status: document.getElementById("swal-status").value,
-        staf: document.getElementById("swal-staf").value,
+        filterStatus: document.getElementById("swal-filter-status").value,
+        filterAsal: document.getElementById("swal-filter-asal").value,
+        newAsal: document.getElementById("swal-new-asal").value,
+        newStatus: document.getElementById("swal-new-status").value,
+        stafTujuan: document.getElementById("swal-staf-tujuan").value
       };
-    },
+    }
   });
 
   if (formValues) {
@@ -652,7 +673,6 @@ window.openMassEditModal = async function () {
  * Mengeksekusi perubahan pada elemen DOM berdasarkan input dari modal
  */
 function applyMassEdit(config) {
-  // Hanya targetkan kontainer "Menerima Tiket"
   const container = transferInContainer;
   if (!container) return;
 
@@ -660,46 +680,63 @@ function applyMassEdit(config) {
   let affectedRows = 0;
 
   rows.forEach((row) => {
-    // 1. UPDATE "MENERIMA DARI"
-    if (config.asal) {
-      const asalSelect = row.querySelector('select[name="dari_staf"]');
-      if (asalSelect) {
-        asalSelect.value = config.asal;
-      }
+    const statusSelect = row.querySelector('select[name="status_terima"]');
+    const asalSelect = row.querySelector('select[name="dari_staf"]');
+    
+    if (!statusSelect || !asalSelect) return;
+
+    // --- LOGIKA FILTER (KONDISI) ---
+    // Cek Status
+    const matchStatus = (config.filterStatus === "ALL" || statusSelect.value === config.filterStatus);
+    // Cek Asal Staf
+    const matchAsal = (config.filterAsal === "ALL" || asalSelect.value === config.filterAsal);
+
+    // Jika tidak cocok dengan kriteria cari, lewati baris ini
+    if (!matchStatus || !matchAsal) return;
+
+    // --- EKSEKUSI PERUBAHAN ---
+    let isChanged = false;
+
+    // 1. Ubah Asal Staf (Menerima Dari)
+    if (config.newAsal) {
+      asalSelect.value = config.newAsal;
+      isChanged = true;
     }
 
-    // 2. UPDATE STATUS
-    if (config.status) {
-      const statusSelect = row.querySelector('select[name="status_terima"]');
-      if (statusSelect) {
-        statusSelect.value = config.status;
-        // Pastikan fungsi toggleTransferTarget tersedia secara global
-        if (window.toggleTransferTarget) {
-          window.toggleTransferTarget(statusSelect);
+    // 2. Ubah Status
+    if (config.newStatus) {
+      statusSelect.value = config.newStatus;
+      isChanged = true;
+      
+      // Update toggle UI (input tujuan TF)
+      if (window.toggleTransferTarget) {
+        window.toggleTransferTarget(statusSelect);
+      }
+
+      // 3. Ubah Staf Tujuan (Jika status baru TF)
+      if (config.newStatus === "TF" && config.stafTujuan) {
+        const targetSelect = row.querySelector(".transfer-target");
+        if (targetSelect) {
+          targetSelect.disabled = false;
+          targetSelect.value = config.stafTujuan;
         }
       }
     }
 
-    // 3. UPDATE STAF TUJUAN (Hanya jika baris tersebut statusnya TF)
-    const targetSelect = row.querySelector(".transfer-target");
-    if (targetSelect && config.staf && !targetSelect.disabled) {
-      targetSelect.value = config.staf;
-    }
-
-    affectedRows++;
+    if (isChanged) affectedRows++;
   });
 
   if (affectedRows > 0) {
     isFormDirty = true;
+    saveFormToCache();
     Swal.fire({
       icon: "success",
       title: "Berhasil",
-      text: `${affectedRows} baris "Menerima Tiket" diperbarui secara massal.`,
-      timer: 1500,
-      showConfirmButton: false,
+      text: `${affectedRows} tiket berhasil diperbarui massal.`,
+      timer: 2000
     });
   } else {
-    Swal.fire("Info", "Tidak ada baris tiket untuk diubah.", "info");
+    Swal.fire("Info", "Tidak ada baris yang cocok dengan kriteria pencarian Anda.", "info");
   }
 }
 
