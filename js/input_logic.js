@@ -641,7 +641,7 @@ window.openMassEditModal = async function () {
     didOpen: () => {
       const statusSelect = document.getElementById("swal-new-status");
       const stafTujuanSelect = document.getElementById("swal-staf-tujuan");
-      
+
       statusSelect.addEventListener("change", () => {
         const isTF = statusSelect.value === "TF";
         stafTujuanSelect.disabled = !isTF;
@@ -659,9 +659,9 @@ window.openMassEditModal = async function () {
         filterAsal: document.getElementById("swal-filter-asal").value,
         newAsal: document.getElementById("swal-new-asal").value,
         newStatus: document.getElementById("swal-new-status").value,
-        stafTujuan: document.getElementById("swal-staf-tujuan").value
+        stafTujuan: document.getElementById("swal-staf-tujuan").value,
       };
-    }
+    },
   });
 
   if (formValues) {
@@ -682,14 +682,17 @@ function applyMassEdit(config) {
   rows.forEach((row) => {
     const statusSelect = row.querySelector('select[name="status_terima"]');
     const asalSelect = row.querySelector('select[name="dari_staf"]');
-    
+
     if (!statusSelect || !asalSelect) return;
 
     // --- LOGIKA FILTER (KONDISI) ---
     // Cek Status
-    const matchStatus = (config.filterStatus === "ALL" || statusSelect.value === config.filterStatus);
+    const matchStatus =
+      config.filterStatus === "ALL" ||
+      statusSelect.value === config.filterStatus;
     // Cek Asal Staf
-    const matchAsal = (config.filterAsal === "ALL" || asalSelect.value === config.filterAsal);
+    const matchAsal =
+      config.filterAsal === "ALL" || asalSelect.value === config.filterAsal;
 
     // Jika tidak cocok dengan kriteria cari, lewati baris ini
     if (!matchStatus || !matchAsal) return;
@@ -707,7 +710,7 @@ function applyMassEdit(config) {
     if (config.newStatus) {
       statusSelect.value = config.newStatus;
       isChanged = true;
-      
+
       // Update toggle UI (input tujuan TF)
       if (window.toggleTransferTarget) {
         window.toggleTransferTarget(statusSelect);
@@ -733,10 +736,14 @@ function applyMassEdit(config) {
       icon: "success",
       title: "Berhasil",
       text: `${affectedRows} tiket berhasil diperbarui massal.`,
-      timer: 2000
+      timer: 2000,
     });
   } else {
-    Swal.fire("Info", "Tidak ada baris yang cocok dengan kriteria pencarian Anda.", "info");
+    Swal.fire(
+      "Info",
+      "Tidak ada baris yang cocok dengan kriteria pencarian Anda.",
+      "info",
+    );
   }
 }
 
@@ -799,141 +806,153 @@ function listenToNotepad() {
   const tbody = document.getElementById("notepad-body");
   if (!tbody) return;
 
-  notepadCollection
-    .orderBy("timestamp", "desc")
-    .onSnapshot((snapshot) => {
-      tbody.innerHTML = "";
+  // 1. Urutkan berdasarkan waktu terkecil/lama ke terbesar/baru (Ascending)
+  notepadCollection.orderBy("timestamp", "asc").onSnapshot((snapshot) => {
+    // Bersihkan tabel setiap ada perubahan agar nomor urut (index) konsisten
+    tbody.innerHTML = "";
 
-      if (snapshot.empty) {
-        tbody.innerHTML =
-          '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-400 italic text-xs">Belum ada log catatan...</td></tr>';
-        return;
-      }
+    if (snapshot.empty) {
+      tbody.innerHTML =
+        '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-400 italic text-xs">Belum ada log catatan...</td></tr>';
+      return;
+    }
 
-      snapshot.docs.forEach((doc, index) => {
-        const data = doc.data();
-        const dateTime = data.timestamp
-          ? new Date(data.timestamp.toDate())
-              .toLocaleString("id-ID", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-              .replace(".", ":")
-          : "--:--";
+    snapshot.docs.forEach((doc, index) => {
+      const data = doc.data();
 
-        const tr = document.createElement("tr");
-        // Padding baris dikurangi (py-1.5) agar lebih rapat
-        tr.className = "hover:bg-amber-50/50 transition-colors even:bg-gray-50/50 border-b border-gray-100";
+      // Proteksi jika timestamp server belum sinkron (masih null)
+      const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
 
-        tr.innerHTML = `
-    <td class="px-2 py-3 text-center text-gray-400 font-medium text-[11px]">${index + 1}</td>
-    <td class="px-4 py-3 font-mono text-indigo-600 font-bold text-xs tracking-tight">${data.tiket_id}</td>
-    <td class="px-4 py-3 text-gray-700 text-xs leading-relaxed tracking-wide">${data.keterangan}</td>
-    <td class="px-4 py-3 text-gray-400 text-[10px] font-medium tabular-nums">${dateTime}</td>
-    <td class="px-4 py-3 text-center">
-        <div class="flex items-center justify-center space-x-4"> <button type="button" onclick="copySingleNote(this)" 
-                class="text-blue-600 hover:text-blue-800 flex items-center gap-1.5 font-bold text-[10px] uppercase transition-all" title="Salin Tiket Ini">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                </svg>
-                Salin
-            </button>
-            <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
-                class="text-indigo-600 hover:text-indigo-900 font-bold text-[10px] uppercase">Edit</button>
-            <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
-                class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Hapus</button>
-        </div>
-    </td>
-`;
-        tbody.appendChild(tr);
-      });
+      const dateTime = dateObj
+        .toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        .replace(".", ":");
+
+      const tr = document.createElement("tr");
+      tr.className =
+        "hover:bg-amber-50/50 transition-colors even:bg-gray-50/50 border-b border-gray-100";
+
+      // ${index + 1} akan otomatis membuat urutan 1, 2, 3 sesuai urutan waktu masuk
+      tr.innerHTML = `
+            <td class="px-2 py-3 text-center text-gray-400 font-medium text-[11px]">${index + 1}</td>
+            <td class="px-4 py-3 font-mono text-indigo-600 font-bold text-xs tracking-tight">${data.tiket_id}</td>
+            <td class="px-4 py-3 text-gray-700 text-xs leading-relaxed tracking-wide">${data.keterangan}</td>
+            <td class="px-4 py-3 text-gray-400 text-[10px] font-medium tabular-nums">${dateTime}</td>
+            <td class="px-4 py-3 text-center">
+                <div class="flex items-center justify-center space-x-4"> 
+                    <button type="button" onclick="copySingleNote(this)" 
+                        class="text-blue-600 hover:text-blue-800 flex items-center gap-1.5 font-bold text-[10px] uppercase transition-all" title="Salin Tiket Ini">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                        </svg>
+                        Salin
+                    </button>
+                    <button type="button" onclick="window.editQuickNote('${doc.id}', '${data.tiket_id}', '${data.keterangan}', event)" 
+                        class="text-indigo-600 hover:text-indigo-900 font-bold text-[10px] uppercase">Edit</button>
+                    <button type="button" onclick="window.deleteQuickNote('${doc.id}', event)" 
+                        class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Hapus</button>
+                </div>
+            </td>
+        `;
+
+      // 2. Gunakan appendChild agar data baru masuk ke bawah
+      tbody.appendChild(tr);
     });
+  });
 }
 
 function copySingleNote(button) {
-    const row = button.closest('tr');
-    const cols = row.querySelectorAll('td');
-    
-    let idTiket = cols[1].innerText.trim();
-    const keterangan = cols[2].innerText.trim();
-    const waktu = cols[3].innerText.trim();
+  const row = button.closest("tr");
+  const cols = row.querySelectorAll("td");
 
-    // Logika TKT2 spasi
-    if (idTiket.includes("TKT")) {
-        idTiket = idTiket.replace("TKT", "TKT ");
-    }
+  let idTiket = cols[1].innerText.trim();
+  const keterangan = cols[2].innerText.trim();
+  const waktu = cols[3].innerText.trim();
 
-    let textToCopy = "📋 MAINTENANCE TEKNISI\n";
-    textToCopy += "==========================\n";
-    textToCopy += `Waktu   : ${waktu}\n`;
-    textToCopy += `ID Tiket : ${idTiket}\n`;
-    textToCopy += `Status   : ${keterangan}\n`;
-    textToCopy += "==========================";
+  // Logika TKT2 spasi
+  if (idTiket.includes("TKT")) {
+    idTiket = idTiket.replace("TKT", "TKT ");
+  }
 
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        // Feedback visual pada tombol yang diklik
-        const originalHTML = button.innerHTML;
-        button.innerHTML = "✅ Tersalin";
-        button.classList.replace('text-blue-600', 'text-green-600');
-        
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.replace('text-green-600', 'text-blue-600');
-        }, 1500);
-    }).catch(err => {
-        console.error("Gagal salin:", err);
+  let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+  textToCopy += "==========================\n";
+  textToCopy += `Waktu   : ${waktu}\n`;
+  textToCopy += `ID Tiket : ${idTiket}\n`;
+  textToCopy += `Status   : ${keterangan}\n`;
+  textToCopy += "==========================";
+
+  navigator.clipboard
+    .writeText(textToCopy)
+    .then(() => {
+      // Feedback visual pada tombol yang diklik
+      const originalHTML = button.innerHTML;
+      button.innerHTML = "✅ Tersalin";
+      button.classList.replace("text-blue-600", "text-green-600");
+
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.replace("text-green-600", "text-blue-600");
+      }, 1500);
+    })
+    .catch((err) => {
+      console.error("Gagal salin:", err);
     });
 }
 
 function copyAllNotes() {
-    const tableBody = document.getElementById('notepad-body');
-    const rows = tableBody.querySelectorAll('tr');
-    
-    if (rows.length === 0) {
-        alert("Belum ada catatan yang bisa disalin.");
-        return;
+  const tableBody = document.getElementById("notepad-body");
+  const rows = tableBody.querySelectorAll("tr");
+
+  if (rows.length === 0) {
+    alert("Belum ada catatan yang bisa disalin.");
+    return;
+  }
+
+  // Perubahan Judul sesuai permintaan
+  let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+  textToCopy += "==========================\n\n";
+
+  rows.forEach((row, index) => {
+    const cols = row.querySelectorAll("td");
+    if (cols.length >= 3) {
+      let idTiket = cols[1].innerText.trim();
+      const keterangan = cols[2].innerText.trim();
+      const waktu = cols[3].innerText.trim();
+
+      // Menambahkan spasi setelah TKT2 secara otomatis
+      if (idTiket.includes("TKT")) {
+        idTiket = idTiket.replace("TKT", "TKT ");
+      }
+
+      textToCopy += `   No         : ${index + 1}\n`;
+      textToCopy += `   Waktu   : ${waktu}\n`;
+      textToCopy += `   ID Tiket : ${idTiket}\n`;
+      textToCopy += `   Status   : ${keterangan}\n`;
+      textToCopy += `--------------------------\n`;
     }
+  });
 
-    // Perubahan Judul sesuai permintaan
-    let textToCopy = "📋 MAINTENANCE TEKNISI\n";
-    textToCopy += "==========================\n\n";
+  navigator.clipboard
+    .writeText(textToCopy)
+    .then(() => {
+      const copyBtn = document.getElementById("copy-btn");
+      const originalContent = copyBtn.innerHTML;
 
-    rows.forEach((row, index) => {
-        const cols = row.querySelectorAll('td');
-        if (cols.length >= 3) {
-            let idTiket = cols[1].innerText.trim();
-            const keterangan = cols[2].innerText.trim();
-            const waktu = cols[3].innerText.trim();
+      // Efek Feedback
+      copyBtn.innerHTML = "✅ Berhasil!";
+      copyBtn.classList.replace("bg-blue-600", "bg-green-600");
 
-            // Menambahkan spasi setelah TKT2 secara otomatis
-            if (idTiket.includes("TKT")) {
-                idTiket = idTiket.replace("TKT", "TKT ");
-            }
-
-            textToCopy += `   No         : ${index + 1}\n`;
-            textToCopy += `   Waktu   : ${waktu}\n`;
-            textToCopy += `   ID Tiket : ${idTiket}\n`;
-            textToCopy += `   Status   : ${keterangan}\n`;
-            textToCopy += `--------------------------\n`;
-        }
-    });
-
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        const copyBtn = document.getElementById('copy-btn');
-        const originalContent = copyBtn.innerHTML;
-        
-        // Efek Feedback
-        copyBtn.innerHTML = "✅ Berhasil!";
-        copyBtn.classList.replace('bg-blue-600', 'bg-green-600');
-        
-        setTimeout(() => {
-            copyBtn.innerHTML = originalContent;
-            copyBtn.classList.replace('bg-green-600', 'bg-blue-600');
-        }, 2000);
-    }).catch(err => {
-        alert("Gagal menyalin teks.");
+      setTimeout(() => {
+        copyBtn.innerHTML = originalContent;
+        copyBtn.classList.replace("bg-green-600", "bg-blue-600");
+      }, 2000);
+    })
+    .catch((err) => {
+      alert("Gagal menyalin teks.");
     });
 }
 
