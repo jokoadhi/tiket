@@ -88,18 +88,18 @@
       }
 
       .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* warna slate-300 */
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* warna slate-400 */
-}
+        width: 5px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1; /* warna slate-300 */
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; /* warna slate-400 */
+      }
     </style>
   </head>
   <body class="bg-gray-50">
@@ -255,10 +255,37 @@
           <span>Kelola IP</span>
         </a>
         <a
+          href="arsip_laporan.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1m-6 9a2 2 0 012 2h2a2 2 0 012-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2v10z"
+            ></path>
+          </svg>
+          <span>Arsip Laporan</span>
+        </a>
+        <a
           href="logs.html"
           class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
         >
-          <svg class="w-5 h-5 text-red-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"></path></svg>
+          <svg
+            class="w-5 h-5 text-red-400 animate-pulse"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+            ></path>
+          </svg>
           <span>Log Aktivitas</span>
         </a>
       </div>
@@ -469,71 +496,126 @@
               </button>
             </div>
 
-            <div id="quick-note-section" class="mt-12 mb-8 pt-8 border-t border-dashed border-gray-200">
-  <h3 class="text-xl font-medium text-amber-700 mb-4 flex items-center">
-    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-    </svg>
-    Catatan Cepat
-  </h3>
+            <div
+              id="quick-note-section"
+              class="mt-12 mb-8 pt-8 border-t border-dashed border-gray-200"
+            >
+              <h3
+                class="text-xl font-medium text-amber-700 mb-4 flex items-center"
+              >
+                <svg
+                  class="w-6 h-6 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  ></path>
+                </svg>
+                Catatan Cepat
+              </h3>
 
-  <div class="bg-amber-50 p-4 rounded-lg mb-4 border border-amber-100 shadow-inner">
-    <div class="flex flex-col md:flex-row gap-3">
-      <input
-        type="text"
-        id="note-tiket-id"
-        placeholder="ID Tiket (Contoh: 12345)"
-        class="w-full md:w-1/4 p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
-      />
-      <input
-        type="text"
-        id="note-keterangan"
-        placeholder="Keterangan / Progress..."
-        class="flex-grow p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
-      />
-      
-      <div class="flex gap-2">
-        <button
-          type="button"
-          onclick="saveQuickNote()"
-          class="flex-1 md:flex-none bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700 transition font-bold shadow-md flex items-center justify-center"
-        >
-          Simpan
-        </button>
-        <button
-          type="button"
-          id="copy-btn"
-          onclick="copyAllNotes()"
-          class="flex-1 md:flex-none bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition font-bold shadow-md flex items-center justify-center"
-          title="Salin semua catatan"
-        >
-          <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-          </svg>
-          Salin
-        </button>
-      </div>
-    </div>
-  </div>
+              <div
+                class="bg-amber-50 p-4 rounded-lg mb-4 border border-amber-100 shadow-inner"
+              >
+                <div class="flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    id="note-tiket-id"
+                    placeholder="ID Tiket (Contoh: 12345)"
+                    class="w-full md:w-1/4 p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
+                  />
+                  <input
+                    type="text"
+                    id="note-keterangan"
+                    placeholder="Keterangan / Progress..."
+                    class="flex-grow p-2 border border-amber-200 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500"
+                  />
 
-  <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-    <div class="max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar">
-      <table class="min-w-full divide-y divide-gray-200 border-collapse">
-        <thead class="bg-gray-50 sticky top-0 z-10">
-          <tr class="shadow-sm">
-            <th class="px-2 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-10 bg-gray-50 text-center">No</th>
-            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4 bg-gray-50">ID Tiket</th>
-            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Keterangan</th>
-            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-24 bg-gray-50">Waktu</th>
-            <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider w-32 bg-gray-50">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="notepad-body" class="bg-white divide-y divide-gray-200 text-sm">
-          </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      onclick="saveQuickNote()"
+                      class="flex-1 md:flex-none bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700 transition font-bold shadow-md flex items-center justify-center"
+                    >
+                      Simpan
+                    </button>
+                    <button
+                      type="button"
+                      id="copy-btn"
+                      onclick="copyAllNotes()"
+                      class="flex-1 md:flex-none bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition font-bold shadow-md flex items-center justify-center"
+                      title="Salin semua catatan"
+                    >
+                      <svg
+                        class="w-5 h-5 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                        ></path>
+                      </svg>
+                      Salin
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+              >
+                <div
+                  class="max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar"
+                >
+                  <table
+                    class="min-w-full divide-y divide-gray-200 border-collapse"
+                  >
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                      <tr class="shadow-sm">
+                        <th
+                          class="px-2 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-10 bg-gray-50 text-center"
+                        >
+                          No
+                        </th>
+                        <th
+                          class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-1/4 bg-gray-50"
+                        >
+                          ID Tiket
+                        </th>
+                        <th
+                          class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-50"
+                        >
+                          Keterangan
+                        </th>
+                        <th
+                          class="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider w-24 bg-gray-50"
+                        >
+                          Waktu
+                        </th>
+                        <th
+                          class="px-4 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider w-32 bg-gray-50"
+                        >
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody
+                      id="notepad-body"
+                      class="bg-white divide-y divide-gray-200 text-sm"
+                    ></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
 
             <div class="mt-10 pt-4 border-t flex gap-4">
               <button

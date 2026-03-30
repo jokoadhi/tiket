@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <link rel="icon" type="image/png" href="assets/icons/ico.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arsip Laporan - Report App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <style>
+      .content-area {
+        transition: margin-left 0.3s ease-in-out;
+        min-height: 100vh;
+      }
+      @media (min-width: 768px) {
+        .content-area {
+          margin-left: 16rem;
+        }
+      }
+      .file-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <div
+      id="backdrop"
+      class="fixed inset-0 bg-black opacity-0 z-30 transition-opacity duration-300 md:hidden pointer-events-none"
+    ></div>
+
+    <nav
+      class="bg-indigo-800 text-white w-64 space-y-6 py-7 px-2 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 ease-in-out z-40 shadow-2xl"
+      id="sidebar"
+    >
+      <a
+        href="index.html"
+        class="text-white flex items-center space-x-3 px-4 mb-8 border-b border-indigo-700 pb-4"
+      >
+        <svg
+          class="w-7 h-7 text-indigo-300"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z"></path>
+        </svg>
+        <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
+      </a>
+      <div class="px-4">
+        <a
+          href="index.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
+            ></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a
+          href="input_tiket.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+          <span>Input Laporan</span>
+        </a>
+        <a
+          href="jadwal.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          <span>Jadwal Staf</span>
+        </a>
+        <a
+          href="mapping.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+          <span>Mapping ODP</span>
+        </a>
+
+        <a
+          href="topologi_list.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+          <span>Topologi Jaringan</span>
+        </a>
+
+        <a
+          href="kelola_staf.html"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.214-.029-.426-.08-.632M20 10V8a2 2 0 00-2-2h-2m2 2h2m-2-2h-2m2 0v-2a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h2m-2-2h2m-2 0v-2a2 2 0 002-2h2m-2 2h2m-2 2h2m2-10a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            ></path>
+          </svg>
+          <span>Kelola Staf</span>
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="cekAksesKelolaIP()"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            ></path>
+          </svg>
+          <span>Kelola IP</span>
+        </a>
+        <a
+          href="arsip_laporan.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition shadow-md font-semibold text-white"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1m-6 9a2 2 0 012 2h2a2 2 0 012-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2v10z"
+            ></path>
+          </svg>
+          <span>Arsip Laporan</span>
+        </a>
+        <a
+          href="logs.html"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5 text-red-400 animate-pulse"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+            ></path>
+          </svg>
+          <span>Log Aktivitas</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      <header
+        class="sticky top-0 bg-white shadow-md p-4 mb-6 z-30 flex justify-between items-center"
+      >
+        <div class="flex items-center space-x-4">
+          <button class="p-2 md:hidden" id="menu-toggle">
+            <svg
+              class="w-6 h-6 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+          </button>
+          <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">
+            Dokumen <span class="text-indigo-600">Arsip</span>
+          </h1>
+        </div>
+        <div class="flex items-center space-x-3 border-l pl-4 border-gray-100">
+          <div class="text-right hidden sm:block">
+            <p
+              id="user-display-name"
+              class="text-sm font-bold text-gray-800 leading-none capitalize"
+            >
+              Loading...
+            </p>
+            <p
+              id="user-display-username"
+              class="text-[14px] font-medium text-indigo-400 mt-1"
+            >
+              @username
+            </p>
+          </div>
+          <button
+            onclick="handleLogout()"
+            class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition shadow-sm border border-red-100"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div
+          class="bg-white p-6 shadow-xl rounded-2xl border border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-center gap-4"
+        >
+          <div>
+            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <i class="fas fa-folder-open text-indigo-600"></i> Repositori File
+              NOC FIBERMAXS
+            </h3>
+            <p
+              class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-black"
+            >
+              Penyimpanan File Laporan
+            </p>
+          </div>
+          <div id="upload-section" class="hidden admin-only">
+            <button
+              onclick="addReportLink()"
+              class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-plus"></i> UPLOAD LAPORAN
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="file-list"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        ></div>
+      </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+    <script>
+      // Inisialisasi Sidebar & Auth (Identik dengan Mapping ODP)
+      document.addEventListener("DOMContentLoaded", () => {
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.getElementById("sidebar");
+        const backdrop = document.getElementById("backdrop");
+
+        if (menuToggle)
+          menuToggle.addEventListener("click", () => {
+            sidebar.classList.remove("-translate-x-full");
+            backdrop.classList.replace("opacity-0", "opacity-50");
+            backdrop.classList.remove("pointer-events-none");
+          });
+        if (backdrop)
+          backdrop.addEventListener("click", () => {
+            sidebar.classList.add("-translate-x-full");
+            backdrop.classList.replace("opacity-50", "opacity-0");
+            backdrop.classList.add("pointer-events-none");
+          });
+
+        // User Info
+        const name = localStorage.getItem("userName");
+        const username = localStorage.getItem("username");
+        const role = (localStorage.getItem("userRole") || "user")
+          .trim()
+          .toLowerCase();
+
+        if (name && username) {
+          document.getElementById("user-display-name").textContent = name;
+          document.getElementById("user-display-username").textContent =
+            `@${username.toLowerCase()}`;
+        } else {
+          window.location.href = "login.html";
+        }
+
+        // Role Access
+        if (role === "admin" || role === "administrator") {
+          document.getElementById("upload-section").classList.remove("hidden");
+        } else {
+          document
+            .querySelectorAll(".admin-only")
+            .forEach((el) =>
+              el.style.setProperty("display", "none", "important"),
+            );
+        }
+
+        loadReports();
+      });
+
+      // 1. Load Arsip (Menampilkan Data)
+      function loadReports() {
+        const list = document.getElementById("file-list");
+        list.innerHTML =
+          '<div class="col-span-full text-center py-10"><i class="fas fa-spinner fa-spin text-2xl text-indigo-600"></i></div>';
+
+        // Ambil role dan bersihkan (huruf kecil & hapus spasi)
+        const rawRole = localStorage.getItem("userRole") || "user";
+        const userRole = rawRole.trim().toLowerCase();
+
+        db.collection("reports_archive")
+          .orderBy("timestamp", "desc")
+          .onSnapshot((snapshot) => {
+            list.innerHTML = "";
+            if (snapshot.empty) {
+              list.innerHTML =
+                '<div class="col-span-full bg-white p-10 rounded-2xl border-2 border-dashed border-gray-200 text-center text-gray-400">Belum ada arsip tersimpan.</div>';
+              return;
+            }
+
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              const date = data.timestamp
+                ? data.timestamp.toDate().toLocaleDateString("id-ID")
+                : "...";
+              const nameLower = data.fileName.toLowerCase();
+
+              let icon = "fa-file-alt text-indigo-400";
+              if (nameLower.includes("xls") || nameLower.includes("csv"))
+                icon = "fa-file-excel text-green-500";
+              if (nameLower.includes("pdf")) icon = "fa-file-pdf text-red-500";
+
+              list.innerHTML += `
+                    <div class="file-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between transition duration-300">
+                        <div>
+                            <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas ${icon} text-2xl"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800 leading-snug mb-1 truncate" title="${data.fileName}">${data.fileName}</h4>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                                <span>${date}</span> • <span class="text-indigo-400">${data.uploadedBy}</span>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex items-center gap-2">
+                            <a href="${data.fileURL}" target="_blank" class="flex-1 bg-indigo-600 text-white text-center py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                                <i class="fas fa-download"></i> UNDUH FILE
+                            </a>
+                            ${
+                              // Cek apakah admin atau administrator
+                              userRole === "administrator" ||
+                              userRole === "admin"
+                                ? `<button onclick="deleteReport('${doc.id}')" class="w-10 h-10 flex items-center justify-center text-gray-300 hover:text-red-500 transition" title="Hapus File">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>`
+                                : ""
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+          });
+      }
+
+      // 2. Upload Laporan Baru
+      async function addReportLink() {
+        const { value: file } = await Swal.fire({
+          title: "Upload Laporan Baru",
+          input: "file",
+          inputAttributes: { accept: ".pdf,.xls,.xlsx" },
+          showCancelButton: true,
+          confirmButtonText: "Upload Sekarang",
+          confirmButtonColor: "#4f46e5",
+        });
+
+        if (file) {
+          Swal.fire({
+            title: "Sedang Mengunggah...",
+            html: "Mohon tunggu sebentar.",
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = async () => {
+            const base64Data = reader.result.split(",")[1];
+            try {
+              const scriptUrl =
+                "https://script.google.com/macros/s/AKfycbwNDQEgO-53HAbO2Esq-d5VlGy5Kz1QY91wJ9-RUT5SWVsz_6wUqvAreIuGPoUJ3TZvkQ/exec";
+
+              // Kita kirim data ke Google
+              const response = await fetch(scriptUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  base64: base64Data,
+                  type: file.type,
+                  name: file.name,
+                }),
+              });
+
+              // Menangkap respon balik dari Google
+              const result = await response.json();
+
+              if (result.status === "success") {
+                // result.url berisi link "?export=download" dari Google Apps Script Anda
+                await db.collection("reports_archive").add({
+                  fileName: file.name,
+                  uploadedBy: localStorage.getItem("userName") || "Admin",
+                  fileURL: result.url, // LINK DIRECT DOWNLOAD
+                  fileId: result.fileId,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+
+                Swal.fire(
+                  "Berhasil!",
+                  "File terupload dan bisa didownload langsung.",
+                  "success",
+                );
+              } else {
+                throw new Error(result.message);
+              }
+            } catch (error) {
+              console.error(error);
+              Swal.fire("Gagal", "Error: " + error.message, "error");
+            }
+          };
+        }
+      }
+
+      // 3. Hapus Arsip
+      async function deleteReport(docId) {
+        const res = await Swal.fire({
+          title: "Hapus File?",
+          text: "File akan dihapus dari Website dan Google Drive.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          confirmButtonText: "Ya, Hapus!",
+        });
+
+        if (res.isConfirmed) {
+          Swal.fire({
+            title: "Sedang Menghapus...",
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
+          try {
+            // 1. Ambil data fileId dari Firestore
+            const docRef = db.collection("reports_archive").doc(docId);
+            const docSnap = await docRef.get();
+            const data = docSnap.data();
+
+            // 2. Kirim perintah hapus ke Google Drive (HANYA JIKA ADA fileId)
+            if (data && data.fileId) {
+              // PASTIKAN URL DI BAWAH INI ADALAH URL SCRIPT ANDA YANG ASLI
+              const scriptUrl =
+                "https://script.google.com/macros/s/AKfycbwNDQEgO-53HAbO2Esq-d5VlGy5Kz1QY91wJ9-RUT5SWVsz_6wUqvAreIuGPoUJ3TZvkQ/exec";
+
+              await fetch(scriptUrl, {
+                method: "POST",
+                // Menggunakan mode no-cors agar tidak terhalang kebijakan browser saat delete
+                mode: "no-cors",
+                body: JSON.stringify({
+                  action: "delete",
+                  fileId: data.fileId,
+                }),
+              });
+            }
+
+            // 3. Hapus data dari Firestore
+            await docRef.delete();
+
+            Swal.fire(
+              "Terhapus!",
+              "File telah dibuang ke sampah Google Drive.",
+              "success",
+            );
+          } catch (error) {
+            console.error("Delete Error:", error);
+            Swal.fire(
+              "Gagal",
+              "Terjadi kesalahan saat menghapus: " + error.message,
+              "error",
+            );
+          }
+        }
+      }
+
+      // 4. Logout
+      window.handleLogout = function () {
+        Swal.fire({
+          title: "Logout?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          confirmButtonText: "Ya",
+        }).then((res) => {
+          if (res.isConfirmed) {
+            localStorage.clear();
+            window.location.href = "login.html";
+          }
+        });
+      };
+    </script>
+  </body>
+</html>
