@@ -42,6 +42,31 @@
         z-index: 10;
         border-right: 2px solid #e2e8f0;
       }
+
+      /* Sel yang masuk dalam area seleksi */
+      .cell-selected {
+        background-color: #e0e7ff !important; /* Indigo 100 */
+        border: 1px solid #4f46e5 !important;
+        position: relative;
+      }
+
+      /* Indikator sel pertama yang diklik */
+      .cell-start {
+        outline: 2px solid #4f46e5 !important;
+        z-index: 10;
+      }
+      /* Efek saat menempelkan data */
+      .paste-success {
+        animation: flash-green 0.5s;
+      }
+      @keyframes flash-green {
+        0% {
+          background-color: #34d399;
+        }
+        100% {
+          background-color: transparent;
+        }
+      }
     </style>
   </head>
   <body class="bg-gray-50">
@@ -373,6 +398,10 @@
     <script src="js/jadwal_logic.js"></script>
 
     <script>
+      let selectedCells = []; // Array elemen <td> yang dipilih
+      let copiedValues = []; // Array nilai shift yang dikopi
+      window.currentActiveCell = null;
+
       document.addEventListener("DOMContentLoaded", () => {
         // 1. Sidebar Toggle Logic
         const menuToggle = document.getElementById("menu-toggle");
@@ -423,6 +452,108 @@
           now.getMonth() + 1,
         ).padStart(2, "0")}`;
         renderTable(); // Initial render
+      });
+
+      // 1. Fungsi Seleksi dengan Debug
+      function selectCell(element) {
+        // Jika tidak tekan Shift, bersihkan seleksi lama
+        if (!event.shiftKey) {
+          clearSelection();
+        }
+
+        element.classList.add("cell-selected");
+        element.classList.add("cell-start");
+        selectedCells.push(element);
+
+        // Simpan elemen ini sebagai TITIK AWAL PASTE
+        window.currentActiveCell = element;
+      }
+      function clearSelection() {
+        selectedCells.forEach((el) => {
+          el.classList.remove("cell-selected");
+          el.classList.remove("cell-start");
+        });
+        selectedCells = [];
+      }
+
+      // 2. Event Listener dengan Debug Detail
+      document.addEventListener("keydown", function (e) {
+        const role = (localStorage.getItem("userRole") || "user").toLowerCase();
+        const isAdmin = role === "admin" || role === "administrator";
+
+        // --- LOGIKA CTRL + C (MENYALIN RANGE) ---
+        if (e.ctrlKey && e.key === "c") {
+          if (!isAdmin) return;
+          if (selectedCells.length === 0) return;
+
+          e.preventDefault();
+
+          // Mengambil semua nilai dari sel yang sedang diblok (biru)
+          copiedValues = selectedCells.map((td) => {
+            const sel = td.querySelector("select");
+            return sel ? sel.value : "";
+          });
+
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: `${copiedValues.length} shift disalin`,
+            showConfirmButton: false,
+            timer: 1000,
+          });
+        }
+
+        // --- LOGIKA CTRL + V (PASTE OTOMATIS MEMANJANG) ---
+        if (e.ctrlKey && e.key === "v") {
+          if (!isAdmin) return;
+          if (copiedValues.length === 0) return;
+
+          // window.currentActiveCell adalah sel terakhir yang Anda klik
+          if (!window.currentActiveCell) {
+            console.warn("Klik pada satu sel tujuan terlebih dahulu!");
+            return;
+          }
+
+          e.preventDefault();
+
+          // Titik awal penempelan
+          let targetCell = window.currentActiveCell;
+
+          // Kita looping data yang ada di memori (bukan sel yang diseleksi)
+          copiedValues.forEach((val, index) => {
+            if (targetCell) {
+              const select = targetCell.querySelector("select");
+
+              // Cek apakah sel target memiliki dropdown (menghindari kolom aksi/nama)
+              if (select) {
+                select.value = val;
+
+                // Trigger 'change' agar jadwal_logic.js menyimpan data ke Firestore/Variabel
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+
+                // Efek Visual Hijau
+                targetCell.style.backgroundColor = "#d1fae5";
+                const currentCell = targetCell; // Shortcut untuk timeout
+                setTimeout(() => {
+                  currentCell.style.backgroundColor = "";
+                }, 500);
+              }
+
+              // OTOMATIS BERGESER KE KANAN (KOLOM BERIKUTNYA)
+              targetCell = targetCell.nextElementSibling;
+            } else {
+              console.warn("Paste terhenti: Mencapai ujung baris tabel.");
+            }
+          });
+
+          // Opsional: Bersihkan seleksi biru setelah paste agar rapi
+          clearSelection();
+        }
+
+        if (e.key === "Escape") {
+          clearSelection();
+        }
       });
 
       window.handleLogout = function () {

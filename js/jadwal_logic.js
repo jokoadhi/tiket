@@ -5,6 +5,9 @@
 
 const dbStaf = db.collection("staf");
 const dbJadwal = db.collection("jadwal_staf");
+let isMouseDown = false;
+document.addEventListener("mousedown", () => (isMouseDown = true));
+document.addEventListener("mouseup", () => (isMouseDown = false));
 
 // ==========================================
 // 1. STYLE & ANIMASI (Pilar Vertikal)
@@ -67,6 +70,15 @@ function getAdminStatus() {
     rawRole.trim().toLowerCase() === "admin" ||
     rawRole.trim().toLowerCase() === "administrator"
   );
+}
+
+function handleMouseOver(element) {
+  if (isMouseDown) {
+    if (!selectedCells.includes(element)) {
+      element.classList.add("cell-selected");
+      selectedCells.push(element);
+    }
+  }
 }
 
 function initAccessControl() {
@@ -147,7 +159,7 @@ window.simpanJadwal = function () {
           last_updated: firebase.firestore.FieldValue.serverTimestamp(),
         })
         .then(() =>
-          Swal.fire("Berhasil", "Jadwal telah diperbarui.", "success")
+          Swal.fire("Berhasil", "Jadwal telah diperbarui.", "success"),
         )
         .catch(() => Swal.fire("Gagal", "Akses ditolak.", "error"));
     }
@@ -193,7 +205,7 @@ window.loadDataTersimpan = async function (bulan) {
       Object.keys(data).forEach((staf) => {
         Object.keys(data[staf]).forEach((tgl) => {
           const cell = document.querySelector(
-            `.cell-shift[data-staf="${staf}"][data-tgl="${tgl}"]`
+            `.cell-shift[data-staf="${staf}"][data-tgl="${tgl}"]`,
           );
           if (cell) {
             cell.value = data[staf][tgl];
@@ -231,7 +243,7 @@ window.renderTable = async function () {
       listTeknisi,
       jumlahHari,
       "container-tabel-teknisi",
-      "Teknisi"
+      "Teknisi",
     );
     window.loadDataTersimpan(inputBulan);
   } catch (error) {
@@ -286,7 +298,7 @@ function renderStrukturTabel(daftarNama, jumlahHari, containerId, label) {
       const bClass = isToday
         ? "animate-pillar bg-amber-50/30"
         : "border-r border-gray-100";
-      html += `<td class="p-0 cell-container ${bClass}">
+      html += `<td onclick="selectCell(this)" onmouseover="handleMouseOver(this)" class="border p-1 cursor-pointer transition-all cell-container ${bClass}">
                 <select ${disabledAttr} onchange="window.updateCellColor(this)" 
                         class="cell-shift w-full h-11 text-center bg-transparent border-none appearance-none font-bold text-[11px]" 
                         data-staf="${nama}" data-tgl="${i}">
@@ -323,12 +335,12 @@ window.generatePolaOtomatis = function () {
     stafInTable.forEach((nama, sIdx) => {
       for (let tgl = 1; tgl <= jumlahHari; tgl++) {
         const cell = document.querySelector(
-          `#${id} .cell-shift[data-staf="${nama}"][data-tgl="${tgl}"]`
+          `#${id} .cell-shift[data-staf="${nama}"][data-tgl="${tgl}"]`,
         );
         if (cell) {
           const idx = Math.floor(
             (tgl - 1 + sIdx * (polaInduk.length / stafInTable.length)) %
-              polaInduk.length
+              polaInduk.length,
           );
           cell.value = polaInduk[idx];
           window.updateCellColor(cell);
@@ -345,7 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}`;
   const inputBulan = document.getElementById("pilih-bulan");
 
