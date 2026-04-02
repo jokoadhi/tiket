@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Management Partner - NOC Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="icon" type="image/png" href="assets/icons/ico.png" />
+    <style>
+      body {
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      .content-area {
+        transition: margin-left 0.3s ease-in-out;
+        min-height: 100vh;
+      }
+      @media (min-width: 768px) {
+        .content-area {
+          margin-left: 16rem;
+        }
+      }
+      tbody tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      tr.hover-row:hover {
+        background-color: #f1f5f9 !important;
+      }
+      #modal-device-list::-webkit-scrollbar {
+        width: 4px;
+      }
+      #modal-device-list::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <div
+      id="backdrop"
+      class="fixed inset-0 bg-black opacity-0 z-30 transition-opacity duration-300 md:hidden pointer-events-none"
+    ></div>
+
+    <nav
+      class="bg-indigo-800 text-white w-64 space-y-6 py-7 px-2 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 ease-in-out z-40 shadow-2xl"
+      id="sidebar"
+    >
+      <a
+        href="index.html"
+        class="text-white flex items-center space-x-3 px-4 mb-8 border-b border-indigo-700 pb-4"
+      >
+        <svg
+          class="w-7 h-7 text-indigo-300"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" fill="currentColor"></path>
+        </svg>
+        <span class="text-2xl font-extrabold tracking-wider">Reporting</span>
+      </a>
+
+      <div class="px-4">
+        <a
+          href="index.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
+            ></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a
+          href="input_tiket.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+          <span>Input Laporan</span>
+        </a>
+        <a
+          href="jadwal.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          <span>Jadwal Staf</span>
+        </a>
+        <a
+          href="mapping.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+          <span>Mapping ODP</span>
+        </a>
+        <a
+          href="topologi_list.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+          <span>Topologi Jaringan</span>
+        </a>
+        <a
+          href="partner.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg bg-indigo-700 transition duration-150 shadow-md font-semibold mt-1 active"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            ></path>
+          </svg>
+          <span>Data Partner</span>
+        </a>
+        <a
+          href="kelola_staf.html"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.214-.029-.426-.08-.632M20 10V8a2 2 0 00-2-2h-2m2 2h2m-2-2h-2m2 0v-2a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2h2m-2-2h2m-2 0v-2a2 2 0 002-2h2m-2 2h2m-2 2h2m2-10a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            ></path>
+          </svg>
+          <span>Kelola Staf</span>
+        </a>
+
+        <a
+          href="javascript:void(0)"
+          onclick="cekAksesKelolaIP()"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            ></path>
+          </svg>
+          <span>Kelola IP</span>
+        </a>
+
+        <a
+          href="arsip_laporan.html"
+          class="flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1m-6 9a2 2 0 012 2h2a2 2 0 012-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2v10z"
+            ></path>
+          </svg>
+          <span>Arsip Laporan</span>
+        </a>
+        <a
+          href="logs.html"
+          class="admin-only flex items-center space-x-3 py-2 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 mt-1 text-indigo-100"
+        >
+          <svg
+            class="w-5 h-5 text-red-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+            ></path>
+          </svg>
+          <span>Log Aktivitas</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      <header class="sticky top-0 bg-white shadow-md p-4 mb-8 z-30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button class="p-2 md:hidden" id="menu-toggle">
+              <svg
+                class="w-6 h-6 text-indigo-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                ></path>
+              </svg>
+            </button>
+            <h1 class="text-xl font-extrabold text-gray-800">
+              Management Partner ISP
+            </h1>
+          </div>
+          <div
+            class="flex items-center space-x-3 border-l pl-4 border-gray-100"
+          >
+            <div class="text-right hidden sm:block">
+              <p
+                id="user-display-name"
+                class="text-sm font-bold text-gray-800 leading-none capitalize"
+              >
+                Loading...
+              </p>
+              <p
+                id="user-display-username"
+                class="text-[12px] font-medium text-indigo-400 mt-1"
+              >
+                @...
+              </p>
+            </div>
+            <button
+              onclick="handleLogout()"
+              class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition shadow-sm border border-red-100"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 pb-12">
+        <div
+          class="bg-white p-6 shadow-lg rounded-xl mb-8 border border-gray-100 admin-only"
+        >
+          <h3
+            class="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest text-center md:text-left"
+          >
+            Registrasi Partner Baru
+          </h3>
+          <form
+            id="form-tambah-partner"
+            class="flex flex-col md:flex-row gap-4"
+          >
+            <input
+              type="text"
+              id="nama-partner"
+              placeholder="Contoh: Partner Testing"
+              required
+              class="flex-grow p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm uppercase font-bold"
+            />
+            <button
+              type="submit"
+              class="bg-indigo-600 text-white font-bold px-8 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 uppercase text-xs"
+            >
+              Simpan Partner
+            </button>
+          </form>
+        </div>
+
+        <div
+          class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100"
+        >
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead
+              class="bg-gray-50 text-gray-500 uppercase text-[10px] font-black tracking-widest"
+            >
+              <tr>
+                <th class="px-6 py-4 text-left">Nama Partner</th>
+                <th class="px-6 py-4 text-center">Jumlah Perangkat</th>
+                <th class="px-6 py-4 text-right">Opsi</th>
+              </tr>
+            </thead>
+            <tbody
+              id="partner-list-body"
+              class="divide-y divide-gray-100 bg-white"
+            ></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Sidebar Toggle
+        const menuToggle = document.getElementById("menu-toggle");
+        const sidebar = document.getElementById("sidebar");
+        const backdrop = document.getElementById("backdrop");
+
+        menuToggle?.addEventListener("click", () => {
+          sidebar.classList.toggle("-translate-x-full");
+          backdrop.classList.toggle("opacity-0");
+          backdrop.classList.toggle("pointer-events-none");
+          backdrop.classList.toggle("opacity-50");
+        });
+
+        backdrop?.addEventListener("click", () => {
+          sidebar.classList.add("-translate-x-full");
+          backdrop.classList.add("opacity-0", "pointer-events-none");
+          backdrop.classList.remove("opacity-50");
+        });
+
+        // User Data Loading
+        const name = localStorage.getItem("userName");
+        const username = localStorage.getItem("username");
+        const role = (localStorage.getItem("userRole") || "user")
+          .trim()
+          .toLowerCase();
+        const isAdmin = role === "admin" || role === "administrator";
+
+        if (name)
+          document.getElementById("user-display-name").textContent = name;
+        if (username)
+          document.getElementById("user-display-username").textContent =
+            `@${username.toLowerCase()}`;
+        if (!isAdmin)
+          document
+            .querySelectorAll(".admin-only")
+            .forEach((el) => el.classList.add("hidden"));
+
+        loadPartnersData();
+      });
+
+      function loadPartnersData() {
+        const partnerTable = document.getElementById("partner-list-body");
+        db.collection("partners")
+          .orderBy("createdAt", "desc")
+          .onSnapshot((snapshot) => {
+            partnerTable.innerHTML = "";
+            snapshot.forEach(async (doc) => {
+              const partner = doc.data();
+              const partnerId = doc.id;
+              const devicesSnap = await db
+                .collection("partners")
+                .doc(partnerId)
+                .collection("devices")
+                .get();
+              const deviceCount = devicesSnap.size;
+
+              partnerTable.innerHTML += `
+              <tr class="hover-row transition duration-150">
+                <td class="px-6 py-4 font-black text-gray-700 uppercase">${partner.nama}</td>
+                <td class="px-6 py-4 text-center">
+                  <span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black italic">
+                    ${deviceCount} DEVICE
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right space-x-2">
+                  <button onclick="manageDevices('${partnerId}', '${partner.nama}')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-700 transition">Kelola</button>
+                  <button onclick="deletePartner('${partnerId}')" class="text-red-400 hover:text-red-600"><svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                </td>
+              </tr>
+            `;
+            });
+          });
+      }
+
+      // TAMBAH PARTNER - SweetAlert2 Toast
+      document
+        .getElementById("form-tambah-partner")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const namaInput = document.getElementById("nama-partner");
+          const nama = namaInput.value.toUpperCase();
+
+          try {
+            await db.collection("partners").add({
+              nama: nama,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+            namaInput.value = "";
+            Swal.fire({
+              icon: "success",
+              title: "Berhasil!",
+              text: `Partner ${nama} telah didaftarkan.`,
+              timer: 1500,
+              showConfirmButton: false,
+              position: "top-end",
+              toast: true,
+            });
+          } catch (err) {
+            Swal.fire("Error", err.message, "error");
+          }
+        });
+
+      // MANAGE DEVICES MODAL
+      window.manageDevices = async (partnerId, partnerName) => {
+        Swal.fire({
+          title: `<div class="border-b pb-3 uppercase tracking-widest text-indigo-600 font-black text-sm">Partner: ${partnerName}</div>`,
+          html: `
+            <div class="text-left mt-6 px-2">
+              <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Daftar Perangkat Terpasang</label>
+              <div id="modal-device-list" class="max-h-[250px] overflow-y-auto mb-6 space-y-3 p-3 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <p class="text-center text-xs text-gray-400 py-8 italic font-medium">Memuat data perangkat...</p>
+              </div>
+              <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100">
+                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4 flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
+                  Tambah Perangkat Baru
+                </p>
+                <div class="grid grid-cols-1 gap-3">
+                  <input id="swal-ip" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500" placeholder="IP Address Utama">
+                  <input id="swal-ip-backup" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500" placeholder="IP Backup (Opsional)">
+                  <div class="grid grid-cols-2 gap-3">
+                     <input id="swal-port" type="number" class="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Port (8291)">
+                     <input id="swal-tipe" class="w-full p-3 border border-gray-200 rounded-xl text-sm uppercase font-bold outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Tipe (OLT/MK)">
+                  </div>
+                </div>
+              </div>
+            </div>
+          `,
+          width: "650px",
+          showCancelButton: true,
+          confirmButtonText: "SIMPAN DEVICE",
+          cancelButtonText: "TUTUP",
+          confirmButtonColor: "#4f46e5",
+          customClass: { popup: "rounded-3xl" },
+          didOpen: () => renderModalDevices(partnerId),
+          preConfirm: () => {
+            const ip = document.getElementById("swal-ip").value;
+            if (!ip) return Swal.showValidationMessage("IP Utama wajib diisi");
+            return {
+              ip: ip,
+              ip_backup: document.getElementById("swal-ip-backup").value || "-",
+              port: document.getElementById("swal-port").value || "8291",
+              tipe:
+                document.getElementById("swal-tipe").value.toUpperCase() ||
+                "MIKROTIK",
+            };
+          },
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            try {
+              await db
+                .collection("partners")
+                .doc(partnerId)
+                .collection("devices")
+                .add({
+                  ...result.value,
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+              // Refresh modal dengan memanggil fungsi yang sama secara rekursif
+              manageDevices(partnerId, partnerName);
+              Swal.fire({
+                icon: "success",
+                title: "Tersimpan",
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 1000,
+              });
+            } catch (err) {
+              Swal.fire("Error", err.message, "error");
+            }
+          }
+        });
+      };
+
+      async function renderModalDevices(partnerId) {
+        const container = document.getElementById("modal-device-list");
+        db.collection("partners")
+          .doc(partnerId)
+          .collection("devices")
+          .orderBy("createdAt", "desc")
+          .onSnapshot((snap) => {
+            if (snap.empty) {
+              container.innerHTML = `<div class="flex flex-col items-center py-10 opacity-30"><p class="text-xs font-bold uppercase tracking-widest text-gray-400 italic">Belum ada perangkat</p></div>`;
+              return;
+            }
+
+            container.innerHTML = `
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-wider">Tipe</th>
+                      <th class="px-3 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-wider">IP Utama</th>
+                      <th class="px-3 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-wider">IP Backup</th>
+                      <th class="px-3 py-3 text-center text-[9px] font-black text-gray-500 uppercase tracking-wider">Port</th>
+                      <th class="px-3 py-3 text-center text-[9px] font-black text-gray-500 uppercase tracking-wider w-10">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="device-table-body" class="bg-white divide-y divide-gray-100"></tbody>
+                </table>
+              </div>`;
+
+            const tableBody = document.getElementById("device-table-body");
+            snap.forEach((doc) => {
+              const d = doc.data();
+              tableBody.innerHTML += `
+                <tr class="hover:bg-indigo-50/30 transition-colors">
+                  <td class="px-3 py-3 whitespace-nowrap"><span class="text-[10px] font-black text-indigo-600 uppercase bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">${d.tipe || "MK"}</span></td>
+                  <td class="px-3 py-3 whitespace-nowrap"><span class="text-sm font-bold text-gray-800 font-mono tracking-tight">${d.ip}</span></td>
+                  <td class="px-3 py-3 whitespace-nowrap"><span class="text-[11px] font-medium text-gray-400 font-mono">${d.ip_backup || "-"}</span></td>
+                  <td class="px-3 py-3 text-center whitespace-nowrap"><span class="text-xs font-black text-indigo-500 font-mono bg-gray-50 px-2 py-1 rounded border">${d.port || "8291"}</span></td>
+                  <td class="px-3 py-3 text-center">
+                    <button onclick="deleteDevice('${partnerId}', '${doc.id}')" class="text-red-400 hover:text-white p-2 hover:bg-red-500 rounded-lg transition-all shadow-sm border border-transparent hover:border-red-600">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </td>
+                </tr>`;
+            });
+          });
+      }
+
+      // HAPUS DEVICE - SweetAlert2
+      window.deleteDevice = async (pId, dId) => {
+        Swal.fire({
+          title: "Hapus Perangkat?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          confirmButtonText: "Ya, Hapus!",
+          cancelButtonText: "Batal",
+        }).then(async (res) => {
+          if (res.isConfirmed) {
+            await db
+              .collection("partners")
+              .doc(pId)
+              .collection("devices")
+              .doc(dId)
+              .delete();
+            Swal.fire({
+              icon: "success",
+              title: "Terhapus",
+              toast: true,
+              position: "top-end",
+              showConfirmButton: false,
+              timer: 1000,
+            });
+          }
+        });
+      };
+
+      // HAPUS PARTNER - SweetAlert2
+      window.deletePartner = (id) => {
+        Swal.fire({
+          title: "Hapus Partner?",
+          text: "Seluruh data perangkat di dalamnya akan terhapus permanen!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          confirmButtonText: "Ya, Hapus Partner",
+          cancelButtonText: "Batal",
+        }).then(async (res) => {
+          if (res.isConfirmed) {
+            await db.collection("partners").doc(id).delete();
+            Swal.fire({
+              icon: "success",
+              title: "Partner Berhasil Dihapus",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
+        });
+      };
+
+      // LOGOUT - SweetAlert2
+      window.handleLogout = () => {
+        Swal.fire({
+          title: "Keluar Aplikasi?",
+          text: "Anda harus login kembali untuk mengakses laporan.",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonColor: "#4f46e5",
+          cancelButtonColor: "#f3f4f6",
+          confirmButtonText: "Ya, Logout",
+          cancelButtonText: "Batal",
+          customClass: {
+            confirmButton: "text-white",
+            cancelButton: "text-gray-600",
+          },
+        }).then((res) => {
+          if (res.isConfirmed) {
+            localStorage.clear();
+            window.location.href = "login.html";
+          }
+        });
+      };
+
+      // CEK AKSES KELOLA IP (Jika dipanggil melalui navigasi)
+      window.cekAksesKelolaIP = () => {
+        const role = (localStorage.getItem("userRole") || "user")
+          .trim()
+          .toLowerCase();
+        if (role === "admin" || role === "administrator") {
+          window.location.href = "kelola_ip.html";
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Akses Ditolak",
+            text: "Menu Kelola IP hanya dapat diakses oleh Administrator.",
+            confirmButtonColor: "#4f46e5",
+          });
+        }
+      };
+    </script>
+  </body>
+</html>
