@@ -913,7 +913,7 @@ function copyAllNotes() {
   }
 
   // Perubahan Judul sesuai permintaan
-  let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+  let textToCopy = "📋 LIST TIKET\n";
   textToCopy += "==========================\n\n";
 
   rows.forEach((row, index) => {
