@@ -878,7 +878,7 @@ function copySingleNote(button) {
     idTiket = idTiket.replace("TKT", "TKT ");
   }
 
-  let textToCopy = "📋 MAINTENANCE TEKNISI\n";
+  let textToCopy = "📋 LIST TIKET\n";
   textToCopy += "==========================\n";
   textToCopy += `Waktu   : ${waktu}\n`;
   textToCopy += `ID Tiket : ${idTiket}\n`;
