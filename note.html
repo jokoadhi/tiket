@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teknisi Live Feed - Premium NOC</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0f172a;
+      }
+      .glass-card {
+        background: rgba(30, 41, 59, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+      }
+      .glass-card:hover {
+        border-color: rgba(59, 130, 246, 0.4);
+        transform: translateY(-2px);
+      }
+      .indicator-pulse {
+        animation: pulse-green 2s infinite;
+      }
+      @keyframes pulse-green {
+        0% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body class="text-slate-200 antialiased custom-scrollbar">
+    <nav
+      class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4"
+    >
+      <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div>
+          <h1
+            class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2"
+          >
+            <span class="bg-blue-600 p-1.5 rounded-lg">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </span>
+            TEKNISI <span class="text-blue-500">LIVE</span> FEED
+          </h1>
+        </div>
+        <div
+          id="status-badge"
+          class="flex items-center bg-green-500/10 text-green-400 px-4 py-1.5 rounded-full text-xs font-bold border border-green-500/20 indicator-pulse"
+        >
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> ONLINE
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6 py-8">
+      <div id="live-notes-container" class="grid grid-cols-1 gap-6">
+        <div
+          class="flex flex-col items-center justify-center py-20 text-slate-500"
+        >
+          <div
+            class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"
+          ></div>
+          <p class="text-sm font-medium">Sinkronisasi Database...</p>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase_init.js"></script>
+
+    <script>
+      const laporanRef = db.collection("quick_notes");
+
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+          });
+          Toast.fire({ icon: "success", title: "ID Tiket berhasil disalin!" });
+        });
+      }
+
+      function startLiveUpdate() {
+        // .orderBy("timestamp", "asc") agar data TERLAMA di ATAS
+        laporanRef.orderBy("timestamp", "asc").onSnapshot(
+          (snapshot) => {
+            const container = document.getElementById("live-notes-container");
+
+            if (snapshot.empty) {
+              container.innerHTML = `
+                <div class="text-center py-20 glass-card rounded-3xl">
+                    <p class="text-slate-400 font-medium">Belum ada data catatan untuk ditampilkan.</p>
+                </div>`;
+              return;
+            }
+
+            container.innerHTML = "";
+            let nomor = 1; // Inisialisasi nomor urut
+
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+
+              // Format Tanggal dan Waktu (Indonesia)
+              let waktuTampil = "Sedang memproses...";
+              if (data.timestamp) {
+                const dateObj = data.timestamp.toDate();
+                waktuTampil =
+                  dateObj.toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "short",
+                  }) +
+                  ", " +
+                  dateObj.toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+              }
+
+              const isiCatatan = data.keterangan || "-";
+              const idTiket = data.tiket_id || "NO ID";
+              const admin = data.created_by || "Admin";
+
+              const card = `
+                <div class="glass-card rounded-2xl p-5 animate__animated animate__fadeIn">
+                  <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                      <div class="bg-blue-600/20 text-blue-400 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border border-blue-500/20">
+                        ${nomor}
+                      </div>
+                      <div>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wide">${admin}</h3>
+                        <p class="text-[11px] text-slate-500 font-medium">${waktuTampil} WIB</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400 font-mono text-[11px] bg-slate-800 px-2 py-1 rounded border border-slate-700">${idTiket}</span>
+                        <button onclick="copyToClipboard('${idTiket}')" class="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-md transition-colors shadow-lg shadow-blue-900/20" title="Salin ID Tiket">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                        </button>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
+                    <p class="text-[14px] leading-relaxed text-slate-300 font-medium">
+                      ${isiCatatan}
+                    </p>
+                  </div>
+                  
+                  <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center text-[10px] text-slate-600 uppercase tracking-widest font-bold">
+                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> DATA VERIFIED
+                    </div>
+                  </div>
+                </div>
+              `;
+              container.innerHTML += card;
+              nomor++; // Naikkan nomor urut
+            });
+          },
+          (error) => {
+            console.error("Error:", error);
+          },
+        );
+      }
+
+      document.addEventListener("DOMContentLoaded", startLiveUpdate);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </body>
+</html>

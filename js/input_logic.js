@@ -250,12 +250,12 @@ async function loadCopiedData() {
 function getAutomaticShift() {
   const hour = new Date().getHours(); // Mengambil jam saat ini (0-23)
 
-  if (hour >= 8 && hour < 16) {
+  if (hour >= 7 && hour < 15) {
     return "PAGI";
-  } else if (hour >= 16 && hour < 23) {
+  } else if (hour >= 15 && hour < 22) {
     return "SORE";
   } else {
-    // Jam 23.00 sampai 07.59
+    // Jam 22.00 sampai 06.59
     return "MALAM";
   }
 }
